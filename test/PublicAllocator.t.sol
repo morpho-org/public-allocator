@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
-import {PublicAllocator,FlowConfig,FlowCaps} from "../src/PublicAllocator.sol";
+import {PublicAllocator, FlowConfig, FlowCaps} from "../src/PublicAllocator.sol";
 import {ErrorsLib as PAErrorsLib} from "../src/libraries/ErrorsLib.sol";
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 
@@ -13,8 +13,9 @@ uint256 constant INITIAL_DEPOSIT = 4 * CAP2;
 contract CantReceive {}
 
 contract PublicAllocatorTest is IntegrationTest {
-    PublicAllocator public publicAllocator;    
+    PublicAllocator public publicAllocator;
     MarketAllocation[] internal allocations;
+
     using MarketParamsLib for MarketParams;
 
     FlowConfig[] internal flowConfigs;
@@ -42,8 +43,8 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(publicAllocator.owner(), address(OWNER));
     }
 
-    function testReallocateCapZeroOutflowByDefault(uint flow) public {
-        flow = uint128(bound(flow,0,CAP2));
+    function testReallocateCapZeroOutflowByDefault(uint256 flow) public {
+        flow = uint128(bound(flow, 0, CAP2));
         vm.assume(flow != 0);
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
@@ -52,9 +53,9 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testReallocateCapZeroInflowByDefault(uint128 flow) public {
-        flow = uint128(bound(flow,0,CAP2));
+        flow = uint128(bound(flow, 0, CAP2));
         vm.assume(flow != 0);
-        deal(address(loanToken),address(vault),flow);
+        deal(address(loanToken), address(vault), flow);
         allocations.push(MarketAllocation(allMarkets[0], flow));
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.InflowCapExceeded.selector, allMarkets[0].id()));
@@ -64,16 +65,16 @@ contract PublicAllocatorTest is IntegrationTest {
     function testConfigureFlowAccess(address sender) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector,sender));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         publicAllocator.setFlows(flowConfigs);
     }
 
     function testReallocateNetting(uint128 flow) public {
-        flow = uint128(bound(flow,0,CAP2));
+        flow = uint128(bound(flow, 0, CAP2));
         vm.assume(flow != 0);
 
-        flowConfigs.push(FlowConfig(idleParams.id(),FlowCaps(flow,0),false));
-        flowConfigs.push(FlowConfig(allMarkets[0].id(),FlowCaps(0,flow),false));
+        flowConfigs.push(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
+        flowConfigs.push(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
 
         vm.prank(OWNER);
         publicAllocator.setFlows(flowConfigs);
@@ -86,15 +87,14 @@ contract PublicAllocatorTest is IntegrationTest {
         allocations.push(MarketAllocation(allMarkets[0], 0));
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT));
         publicAllocator.reallocate(allocations);
-
     }
 
     function testReallocateReset(uint128 flow) public {
-        flow = uint128(bound(flow,0,CAP2/2));
+        flow = uint128(bound(flow, 0, CAP2 / 2));
         vm.assume(flow != 0);
 
-        flowConfigs.push(FlowConfig(idleParams.id(),FlowCaps(flow,0),false));
-        flowConfigs.push(FlowConfig(allMarkets[0].id(),FlowCaps(0,flow),false));
+        flowConfigs.push(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
+        flowConfigs.push(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
         vm.prank(OWNER);
         publicAllocator.setFlows(flowConfigs);
 
@@ -109,55 +109,54 @@ contract PublicAllocatorTest is IntegrationTest {
 
         delete allocations;
 
-        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow*2));
-        allocations.push(MarketAllocation(allMarkets[0], flow*2));
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow * 2));
+        allocations.push(MarketAllocation(allMarkets[0], flow * 2));
         publicAllocator.reallocate(allocations);
     }
 
-    function testFeeAmountSuccess(uint requiredFee, uint givenFee) public {
+    function testFeeAmountSuccess(uint256 requiredFee, uint256 givenFee) public {
         vm.prank(OWNER);
         publicAllocator.setFee(requiredFee);
 
-        givenFee = bound(givenFee,requiredFee,type(uint).max);
-        vm.deal(address(this),givenFee);
+        givenFee = bound(givenFee, requiredFee, type(uint256).max);
+        vm.deal(address(this), givenFee);
 
-        publicAllocator.reallocate{value:givenFee}(allocations);
+        publicAllocator.reallocate{value: givenFee}(allocations);
     }
 
-
-    function testFeeAmountFail(uint requiredFee, uint givenFee) public {
+    function testFeeAmountFail(uint256 requiredFee, uint256 givenFee) public {
         vm.assume(requiredFee > 0);
 
         vm.prank(OWNER);
         publicAllocator.setFee(requiredFee);
 
-        givenFee = bound(givenFee,0,requiredFee-1);
-        vm.deal(address(this),givenFee);
+        givenFee = bound(givenFee, 0, requiredFee - 1);
+        vm.deal(address(this), givenFee);
         vm.expectRevert(PAErrorsLib.FeeTooLow.selector);
 
-        publicAllocator.reallocate{value:givenFee}(allocations);
+        publicAllocator.reallocate{value: givenFee}(allocations);
     }
 
     function testTransferFeeSuccess() public {
         vm.prank(OWNER);
         publicAllocator.setFee(0.001 ether);
 
-        publicAllocator.reallocate{value:0.01 ether}(allocations);
-        publicAllocator.reallocate{value:0.005 ether}(allocations);
+        publicAllocator.reallocate{value: 0.01 ether}(allocations);
+        publicAllocator.reallocate{value: 0.005 ether}(allocations);
 
-        uint before = address(this).balance;
+        uint256 before = address(this).balance;
 
         vm.prank(OWNER);
         publicAllocator.transferFee(address(this));
 
-        assertEq(address(this).balance - before, 0.01 ether + 0.005 ether,"wrong fee transferred");
+        assertEq(address(this).balance - before, 0.01 ether + 0.005 ether, "wrong fee transferred");
     }
 
     function testTransferFeeFail() public {
         vm.prank(OWNER);
         publicAllocator.setFee(0.001 ether);
 
-        publicAllocator.reallocate{value:0.01 ether}(allocations);
+        publicAllocator.reallocate{value: 0.01 ether}(allocations);
 
         CantReceive cr = new CantReceive();
         vm.expectRevert(PAErrorsLib.FeeTransferFail.selector);

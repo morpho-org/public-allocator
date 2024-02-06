@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.21;
 
-import {Id, IMorpho, IMetaMorpho, MarketAllocation,MarketParams} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
-import {MarketParamsLib, MorphoLib,MorphoBalancesLib,SharesMathLib,Market} from "../lib/metamorpho/src/MetaMorpho.sol";
+import {
+    Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
+} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {
+    MarketParamsLib, MorphoLib, MorphoBalancesLib, SharesMathLib, Market
+} from "../lib/metamorpho/src/MetaMorpho.sol";
 import {Ownable2Step, Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {FlowCaps, FlowConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
@@ -14,10 +18,10 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
 
     /// STORAGE ///
 
-    uint fee;
+    uint256 fee;
     IMetaMorpho public immutable VAULT;
     IMorpho public immutable MORPHO;
-    mapping(Id => int) public flows;
+    mapping(Id => int256) public flows;
     mapping(Id => FlowCaps) public flowCaps;
     // using IMorpho
 
@@ -29,7 +33,6 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         MORPHO = VAULT.MORPHO();
     }
 
-
     /// PUBLIC ///
 
     function reallocate(MarketAllocation[] calldata allocations) external payable {
@@ -37,7 +40,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
             revert ErrorsLib.FeeTooLow();
         }
 
-        uint[] memory shares = new uint[](allocations.length);
+        uint256[] memory shares = new uint256[](allocations.length);
         for (uint256 i = 0; i < allocations.length; ++i) {
             shares[i] = MORPHO.supplyShares(allocations[i].marketParams.id(), address(VAULT));
         }
@@ -48,31 +51,32 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         for (uint256 i = 0; i < allocations.length; ++i) {
             Id id = allocations[i].marketParams.id();
             market = MORPHO.market(id);
-            uint newShares = MORPHO.supplyShares(id, address(VAULT));
+            uint256 newShares = MORPHO.supplyShares(id, address(VAULT));
             if (newShares >= shares[i]) {
-                flows[id] += int((newShares - shares[i]).toAssetsUp(market.totalSupplyAssets,market.totalSupplyShares));
-                if (flows[id] > int(uint(flowCaps[id].inflow))) {
+                flows[id] +=
+                    int256((newShares - shares[i]).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares));
+                if (flows[id] > int256(uint256(flowCaps[id].inflow))) {
                     revert ErrorsLib.InflowCapExceeded(id);
                 }
             } else {
-                flows[id] -= int((shares[i] - newShares).toAssetsUp(market.totalSupplyAssets,market.totalSupplyShares));
-                if (flows[id] < -int(uint(flowCaps[id].outflow))) {
+                flows[id] -=
+                    int256((shares[i] - newShares).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares));
+                if (flows[id] < -int256(uint256(flowCaps[id].outflow))) {
                     revert ErrorsLib.OutflowCapExceeded(id);
                 }
             }
         }
-            
     }
 
     /// OWNER ONLY ///
 
-    function setFee(uint _fee) external onlyOwner {
+    function setFee(uint256 _fee) external onlyOwner {
         fee = _fee;
     }
 
     function transferFee(address feeRecipient) external onlyOwner {
         if (address(this).balance > 0) {
-            (bool success,) = feeRecipient.call{value:address(this).balance}("");
+            (bool success,) = feeRecipient.call{value: address(this).balance}("");
             if (!success) {
                 revert ErrorsLib.FeeTransferFail();
             }
@@ -83,7 +87,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
     function setFlows(FlowConfig[] calldata flowConfigs) external onlyOwner {
         FlowConfig memory flowConfig;
-        for (uint i = 0; i < flowConfigs.length; ++i) {
+        for (uint256 i = 0; i < flowConfigs.length; ++i) {
             flowConfig = flowConfigs[i];
             Id id = flowConfig.id;
 

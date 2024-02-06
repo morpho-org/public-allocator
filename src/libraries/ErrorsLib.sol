@@ -25,6 +25,4 @@ library ErrorsLib {
 
     /// @notice Thrown when the fee recipient fails to receive the fee
     error FeeTransferFail();
-
 }
-
