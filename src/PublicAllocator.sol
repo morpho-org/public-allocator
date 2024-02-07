@@ -89,12 +89,11 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         FlowConfig memory flowConfig;
         for (uint256 i = 0; i < flowConfigs.length; ++i) {
             flowConfig = flowConfigs[i];
-            Id id = flowConfig.id;
 
-            flowCaps[id] = flowConfig.caps;
+            flowCaps[flowConfig.id] = flowConfig.caps;
 
             if (flowConfig.resetFlow) {
-                flows[id] = 0;
+                flows[flowConfig.id] = 0;
             }
         }
     }
