@@ -69,6 +69,20 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlows(flowConfigs);
     }
 
+    function testTransferFeeAccess(address sender, address recipient) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.transferFee(recipient);
+    }
+
+    function testSetFeeAccess(address sender, uint256 fee) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.setFee(fee);
+    }
+
     function testReallocateNetting(uint128 flow) public {
         flow = uint128(bound(flow, 0, CAP2));
         vm.assume(flow != 0);
