@@ -19,8 +19,6 @@ contract PublicAllocatorTest is IntegrationTest {
 
     using MarketParamsLib for MarketParams;
 
-    FlowConfig[] internal flowConfigs;
-
     function setUp() public override {
         super.setUp();
 
@@ -67,7 +65,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-        publicAllocator.setFlows(flowConfigs);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0), false));
     }
 
     function testTransferFeeAccess(address sender, address recipient) public {
@@ -88,11 +86,10 @@ contract PublicAllocatorTest is IntegrationTest {
         flow = uint128(bound(flow, 0, CAP2));
         vm.assume(flow != 0);
 
-        flowConfigs.push(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
-        flowConfigs.push(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
-
         vm.prank(OWNER);
-        publicAllocator.setFlows(flowConfigs);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
 
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
@@ -108,19 +105,19 @@ contract PublicAllocatorTest is IntegrationTest {
         flow = uint128(bound(flow, 0, CAP2 / 2));
         vm.assume(flow != 0);
 
-        flowConfigs.push(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
-        flowConfigs.push(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
         vm.prank(OWNER);
-        publicAllocator.setFlows(flowConfigs);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(),FlowCaps(flow,0),false));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
 
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         publicAllocator.reallocate(allocations);
 
-        flowConfigs[0].resetFlow = true;
-        flowConfigs[1].resetFlow = true;
         vm.prank(OWNER);
-        publicAllocator.setFlows(flowConfigs);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(),FlowCaps(flow,0),true));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), true));
 
         delete allocations;
 

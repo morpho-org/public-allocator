@@ -31,7 +31,7 @@ interface IPublicAllocatorBase {
     function reallocate(MarketAllocation[] calldata allocations) external payable;
     function setFee(uint256 _fee) external;
     function transferFee(address feeRecipient) external;
-    function setFlows(FlowConfig[] calldata configs) external;
+    function setFlow(FlowConfig calldata flowConfig) external;
 }
 
 /// @dev This interface is inherited by PublicAllocator so that function signatures are checked by the compiler.
