@@ -11,19 +11,13 @@ import {
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 struct FlowCaps {
-    uint128 outflow;
-    uint128 inflow;
+    uint128 maxIn;
+    uint128 maxOut;
 }
 
 struct FlowConfig {
     Id id;
     FlowCaps caps;
-interface IOwnable {
-    function owner() external view returns (address);
-    function transferOwnership(address) external;
-    function renounceOwnership() external;
-    function acceptOwnership() external;
-    function pendingOwner() external view returns (address);
 }
 
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
@@ -31,7 +25,6 @@ interface IOwnable {
 interface IPublicAllocatorBase {
     function VAULT() external view returns (IMetaMorpho);
     function MORPHO() external view returns (IMorpho);
-    function flows(Id) external view returns (int256);
     function supplyCaps(Id) external view returns (uint256);
 
     function reallocate(MarketAllocation[] calldata allocations) external payable;
