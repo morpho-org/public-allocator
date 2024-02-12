@@ -27,11 +27,13 @@ interface IPublicAllocatorBase {
     function VAULT() external view returns (IMetaMorpho);
     function MORPHO() external view returns (IMorpho);
     function flows(Id) external view returns (int256);
+    function supplyCaps(Id) external view returns (uint256);
 
     function reallocate(MarketAllocation[] calldata allocations) external payable;
     function setFee(uint256 _fee) external;
     function transferFee(address feeRecipient) external;
     function setFlow(FlowConfig calldata flowConfig) external;
+    function setCap(Id id, uint supplyCap) external;
 }
 
 /// @dev This interface is inherited by PublicAllocator so that function signatures are checked by the compiler.

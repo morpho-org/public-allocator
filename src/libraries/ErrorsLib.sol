@@ -25,4 +25,7 @@ library ErrorsLib {
 
     /// @notice Thrown when the fee recipient fails to receive the fee
     error FeeTransferFail();
+
+    /// @notice Thrown when the supply cap has been exceeded on market `id` during a reallocation of funds.
+    error PublicAllocatorSupplyCapExceeded(Id id);
 }

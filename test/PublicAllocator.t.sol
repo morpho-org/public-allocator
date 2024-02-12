@@ -33,6 +33,12 @@ contract PublicAllocatorTest is IntegrationTest {
 
         _setCap(allMarkets[0], CAP2);
         _sortSupplyQueueIdleLast();
+
+        // Remove public allocator caps by default
+        vm.prank(OWNER);
+        publicAllocator.setCap(idleParams.id(), type(uint).max);
+        vm.prank(OWNER);
+        publicAllocator.setCap(allMarkets[0].id(), type(uint).max);
     }
 
     function testOwner() public {
@@ -77,6 +83,14 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         publicAllocator.setFee(fee);
+    }
+
+    function testSetCapAccess(address sender, Id id, uint cap) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.setCap(id, cap);
+
     }
 
     function testReallocateNetting(uint128 flow) public {
@@ -183,4 +197,82 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     receive() external payable {}
+
+    function testInflowGoesAboveCap(uint cap, uint128 flow) public {
+        cap = bound(cap, 0, CAP2-1);
+        flow = uint128(bound(flow, cap+1, CAP2));
+
+        vm.startPrank(OWNER);
+        publicAllocator.setCap(allMarkets[0].id(), cap);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, 0), false));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, type(uint128).max), false));
+        vm.stopPrank();
+
+        // Should work at cap
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - cap));
+        allocations.push(MarketAllocation(allMarkets[0], cap));
+        publicAllocator.reallocate(allocations);
+
+        // Should not work above cap
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
+        allocations.push(MarketAllocation(allMarkets[0], flow));
+
+        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())); 
+        publicAllocator.reallocate(allocations);
+    }
+
+    function testInflowStartsAboveCap(uint cap, uint128 flow) public {
+        cap = bound(cap, 0, CAP2-2);
+        flow = uint128(bound(flow, cap, CAP2-1));
+
+        // Remove flow limits
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, 0), false));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, type(uint128).max), false));
+
+        // Set supply above future public allocator cap
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
+        allocations.push(MarketAllocation(allMarkets[0], flow));
+        publicAllocator.reallocate(allocations);
+
+        // Set supply in market 0 > public allocation cap
+        vm.prank(OWNER);
+        publicAllocator.setCap(allMarkets[0].id(), cap);
+
+        // Increase supply even more (by 1)
+        allocations[0].assets = INITIAL_DEPOSIT - flow - 1;
+        allocations[1].assets = flow + 1;
+
+        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id()));
+        publicAllocator.reallocate(allocations);
+    }
+
+    function testStrictOutflowStartsAboveCap(uint cap, uint128 flow, uint128 flow2) public {
+        cap = bound(cap, 0, CAP2-2);
+        flow = uint128(bound(flow, cap+2, CAP2));
+        flow2 = uint128(bound(flow2,cap+1,flow-1));
+
+        // Remove flow limits
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, 0), false));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, type(uint128).max), false));
+
+        // Set supply above future public allocator cap
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
+        allocations.push(MarketAllocation(allMarkets[0], flow));
+        publicAllocator.reallocate(allocations);
+
+        // Set supply in market 0 > public allocation cap
+        vm.prank(OWNER);
+        publicAllocator.setCap(allMarkets[0].id(), cap);
+
+        // Strictly decrease supply
+        delete allocations;
+        allocations.push(MarketAllocation(allMarkets[0], flow2));
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow2));
+
+        publicAllocator.reallocate(allocations);
+    }
 }
