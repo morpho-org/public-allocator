@@ -32,9 +32,6 @@ contract PublicAllocatorTest is IntegrationTest {
         vault.deposit(INITIAL_DEPOSIT, ONBEHALF);
 
         _setCap(allMarkets[0], CAP2);
-        _setCap(allMarkets[1], CAP2);
-        _setCap(allMarkets[2], CAP2);
-
         _sortSupplyQueueIdleLast();
     }
 
