@@ -6,6 +6,7 @@ import "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
 import {PublicAllocator, FlowConfig, FlowCaps} from "../src/PublicAllocator.sol";
 import {ErrorsLib as PAErrorsLib} from "../src/libraries/ErrorsLib.sol";
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
+import {IPublicAllocator} from "../src/interfaces/IPublicAllocator.sol";
 
 uint256 constant CAP2 = 100e18;
 uint256 constant INITIAL_DEPOSIT = 4 * CAP2;
@@ -13,7 +14,7 @@ uint256 constant INITIAL_DEPOSIT = 4 * CAP2;
 contract CantReceive {}
 
 contract PublicAllocatorTest is IntegrationTest {
-    PublicAllocator public publicAllocator;
+    IPublicAllocator public publicAllocator;
     MarketAllocation[] internal allocations;
 
     using MarketParamsLib for MarketParams;
@@ -23,7 +24,7 @@ contract PublicAllocatorTest is IntegrationTest {
     function setUp() public override {
         super.setUp();
 
-        publicAllocator = new PublicAllocator(address(OWNER), address(vault));
+        publicAllocator = IPublicAllocator(address(new PublicAllocator(address(OWNER), address(vault))));
         vm.prank(OWNER);
         vault.setIsAllocator(address(publicAllocator), true);
 

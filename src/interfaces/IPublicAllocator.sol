@@ -14,6 +14,14 @@ struct FlowConfig {
     bool resetFlow;
 }
 
+interface IOwnable {
+    function owner() external view returns (address);
+    function transferOwnership(address) external;
+    function renounceOwnership() external;
+    function acceptOwnership() external;
+    function pendingOwner() external view returns (address);
+}
+
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorBase {
@@ -38,6 +46,6 @@ interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
 /// @custom:contact security@morpho.org
 /// @dev Use this interface for PublicAllocator to have access to all the functions with the appropriate function
 /// signatures.
-interface IPublicAllocator is IPublicAllocatorBase {
+interface IPublicAllocator is IPublicAllocatorBase, IOwnable {
     function flowCaps(Id) external view returns (FlowCaps memory);
 }
