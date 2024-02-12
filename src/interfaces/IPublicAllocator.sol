@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.21;
 
-import {IMetaMorpho, IMorpho, MarketAllocation, Id} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {
+    IMetaMorpho,
+    IMorpho,
+    MarketAllocation,
+    Id,
+    IOwnable,
+    IMulticall
+} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 struct FlowCaps {
     uint128 outflow;
@@ -12,14 +19,6 @@ struct FlowConfig {
     Id id;
     FlowCaps caps;
     bool resetFlow;
-}
-
-interface IOwnable {
-    function owner() external view returns (address);
-    function transferOwnership(address) external;
-    function renounceOwnership() external;
-    function acceptOwnership() external;
-    function pendingOwner() external view returns (address);
 }
 
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
@@ -46,6 +45,6 @@ interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
 /// @custom:contact security@morpho.org
 /// @dev Use this interface for PublicAllocator to have access to all the functions with the appropriate function
 /// signatures.
-interface IPublicAllocator is IPublicAllocatorBase, IOwnable {
+interface IPublicAllocator is IOwnable, IMulticall, IPublicAllocatorBase {
     function flowCaps(Id) external view returns (FlowCaps memory);
 }

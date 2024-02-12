@@ -7,11 +7,12 @@ import {
 import {
     MarketParamsLib, MorphoLib, MorphoBalancesLib, SharesMathLib, Market
 } from "../lib/metamorpho/src/MetaMorpho.sol";
-import {Ownable2Step, Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
+import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
+import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {FlowCaps, FlowConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
 
-contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
+contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
     using MarketParamsLib for MarketParams;
     using SharesMathLib for uint256;
