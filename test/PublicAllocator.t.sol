@@ -106,7 +106,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(flow != 0);
 
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(),FlowCaps(flow,0),false));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
         vm.prank(OWNER);
         publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
 
@@ -115,7 +115,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.reallocate(allocations);
 
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(),FlowCaps(flow,0),true));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(flow, 0), true));
         vm.prank(OWNER);
         publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), true));
 
