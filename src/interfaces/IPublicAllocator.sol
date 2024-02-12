@@ -18,7 +18,12 @@ struct FlowCaps {
 struct FlowConfig {
     Id id;
     FlowCaps caps;
-    bool resetFlow;
+interface IOwnable {
+    function owner() external view returns (address);
+    function transferOwnership(address) external;
+    function renounceOwnership() external;
+    function acceptOwnership() external;
+    function pendingOwner() external view returns (address);
 }
 
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
