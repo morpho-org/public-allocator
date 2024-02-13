@@ -43,15 +43,6 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
 
     /// PUBLIC ///
 
-    struct Flow {
-        Id id;
-        int128 value;
-    }
-
-    // Reallocate value to and from markets. A negative flow value removes liquidity, a positive value adds liquidity.
-    // Flow values are not always respected:
-    // - If necessary, negative flow values are clamped to leave exactly 0 in a market.
-    // - Positive flow values that overflow supply (or make it reach type(uint).max) are interpreted as "supply everything withdrawn during the current reallocation". This may result in a smaller flow value. It may also trigger a revert if the new flow value also overflows supply.
     function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams) external payable {
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length+1);
         allocations[withdrawals.length].marketParams = depositMarketParams;
