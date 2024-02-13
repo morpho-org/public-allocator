@@ -7,7 +7,8 @@ import {
     MarketAllocation,
     Id,
     IOwnable,
-    IMulticall
+    IMulticall,
+    MarketParams
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 struct FlowCaps {
@@ -20,6 +21,11 @@ struct FlowConfig {
     FlowCaps caps;
 }
 
+struct Withdrawal {
+    MarketParams marketParams;
+    uint128 amount;
+}
+
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorBase {
@@ -27,7 +33,7 @@ interface IPublicAllocatorBase {
     function MORPHO() external view returns (IMorpho);
     function supplyCaps(Id) external view returns (uint256);
 
-    function reallocate(MarketAllocation[] calldata allocations) external payable;
+    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams) external payable;
     function setFee(uint256 _fee) external;
     function transferFee(address feeRecipient) external;
     function setFlow(FlowConfig calldata flowConfig) external;

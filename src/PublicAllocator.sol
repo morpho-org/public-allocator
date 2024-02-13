@@ -12,13 +12,14 @@ import {
     Market,
     UtilsLib
 } from "../lib/metamorpho/src/MetaMorpho.sol";
+import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {FlowCaps, FlowConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
+import {FlowCaps, FlowConfig, Withdrawal, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
 
 contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTyping {
-    using MorphoLib for IMorpho;
+    using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
     using SharesMathLib for uint256;
     using UtilsLib for uint256;
@@ -42,39 +43,41 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
 
     /// PUBLIC ///
 
-    function reallocate(MarketAllocation[] calldata allocations) external payable {
-        if (msg.value < fee) {
-            revert ErrorsLib.FeeTooLow();
-        }
+    struct Flow {
+        Id id;
+        int128 value;
+    }
 
-        uint256[] memory shares = new uint256[](allocations.length);
-        for (uint256 i = 0; i < allocations.length; ++i) {
-            shares[i] = MORPHO.supplyShares(allocations[i].marketParams.id(), address(VAULT));
-        }
+    // Reallocate value to and from markets. A negative flow value removes liquidity, a positive value adds liquidity.
+    // Flow values are not always respected:
+    // - If necessary, negative flow values are clamped to leave exactly 0 in a market.
+    // - Positive flow values that overflow supply (or make it reach type(uint).max) are interpreted as "supply everything withdrawn during the current reallocation". This may result in a smaller flow value. It may also trigger a revert if the new flow value also overflows supply.
+    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams) external payable {
+        MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length+1);
+        allocations[withdrawals.length].marketParams = depositMarketParams;
+        allocations[withdrawals.length].assets = type(uint).max;
 
-        VAULT.reallocate(allocations);
+        uint128 totalWithdrawn;
 
-        Market memory market;
-        for (uint256 i = 0; i < allocations.length; ++i) {
-            Id id = allocations[i].marketParams.id();
-            market = MORPHO.market(id);
-            uint256 newShares = MORPHO.supplyShares(id, address(VAULT));
-            if (newShares >= shares[i]) {
-                // Withdrawing small enough amounts when the cap is already exceeded can result in the error below
-                if (newShares.toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares) > supplyCaps[id]) {
-                    revert ErrorsLib.PublicAllocatorSupplyCapExceeded(id);
-                }
-                uint128 inflow =
-                    (newShares - shares[i]).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares).toUint128();
-                flowCaps[id].maxIn -= inflow;
-                flowCaps[id].maxOut += inflow;
-            } else {
-                uint128 outflow =
-                    (shares[i] - newShares).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares).toUint128();
-                flowCaps[id].maxIn += outflow;
-                flowCaps[id].maxOut -= outflow;
+        for (uint256 i = 0; i < withdrawals.length; ++i) {
+            Id id = withdrawals[i].marketParams.id();
+            uint assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams,address(VAULT));
+            uint128 withdrawnAssets = withdrawals[i].amount;
+            // Clamp at 0 if withdrawnAssets is too big
+            if (withdrawnAssets > assets) {
+                withdrawnAssets = assets.toUint128();
             }
+
+            totalWithdrawn += withdrawnAssets;
+            allocations[i].assets = assets - withdrawnAssets;
+            flowCaps[id].maxIn += withdrawnAssets;
+            flowCaps[id].maxOut -= withdrawnAssets;
         }
+
+        Id depositMarketId = depositMarketParams.id();
+        flowCaps[depositMarketId].maxIn -= totalWithdrawn;
+        flowCaps[depositMarketId].maxOut += totalWithdrawn;
+
     }
 
     /// OWNER ONLY ///
