@@ -44,6 +44,10 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     /// PUBLIC ///
 
     function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams) external payable {
+        if (msg.value < fee) {
+            revert ErrorsLib.FeeTooLow();
+        }
+
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length+1);
         allocations[withdrawals.length].marketParams = depositMarketParams;
         allocations[withdrawals.length].assets = type(uint).max;
