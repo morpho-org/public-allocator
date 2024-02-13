@@ -34,7 +34,6 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     IMorpho public immutable MORPHO;
     mapping(Id => FlowCaps) public flowCaps;
     mapping(Id => uint256) public supplyCaps;
-    // using IMorpho
 
     /// CONSTRUCTOR ///
 
