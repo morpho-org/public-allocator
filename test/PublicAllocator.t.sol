@@ -15,7 +15,6 @@ contract CantReceive {}
 
 contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
-    MarketAllocation[] internal allocations;
     Withdrawal[] internal withdrawals;
 
     using MarketParamsLib for MarketParams;
@@ -46,238 +45,232 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(publicAllocator.owner(), address(OWNER));
     }
 
-    function testReallocateCapZeroOutflowByDefault(uint256 flow) public {
+    function testReallocateCapZeroOutflowByDefault(uint128 flow) public {
         flow = uint128(bound(flow, 0, CAP2));
         vm.assume(flow != 0);
-        withdrawals.push(Withdrawal(idleParams,uint128(INITIAL_DEPOSIT - flow)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max,0)));
+        withdrawals.push(Withdrawal(idleParams,flow));
         vm.expectRevert(stdError.arithmeticError);
         publicAllocator.withdrawTo(withdrawals,allMarkets[0]);
     }
 
-    // FIXME adapt tests
+    function testReallocateCapZeroInflowByDefault(uint128 flow) public {
+        flow = uint128(bound(flow, 0, CAP2));
+        vm.assume(flow != 0);
+        deal(address(loanToken), address(vault), flow);
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        withdrawals.push(Withdrawal(idleParams,flow));
+        vm.expectRevert(stdError.arithmeticError);
+        publicAllocator.withdrawTo(withdrawals,allMarkets[0]);
+    }
 
-    // function testReallocateCapZeroInflowByDefault(uint128 flow) public {
-    //     flow = uint128(bound(flow, 0, CAP2));
-    //     vm.assume(flow != 0);
-    //     deal(address(loanToken), address(vault), flow);
-    //     allocations.push(MarketAllocation(allMarkets[0], flow));
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
-    //     vm.expectRevert(stdError.arithmeticError);
-    //     publicAllocator.withdrawTo(allocations);
-    // }
+    function testConfigureFlowAccess(address sender) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
+    }
 
-    // function testConfigureFlowAccess(address sender) public {
-    //     vm.assume(sender != OWNER);
-    //     vm.prank(sender);
-    //     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-    //     publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
-    // }
+    function testTransferFeeAccess(address sender, address recipient) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.transferFee(recipient);
+    }
 
-    // function testTransferFeeAccess(address sender, address recipient) public {
-    //     vm.assume(sender != OWNER);
-    //     vm.prank(sender);
-    //     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-    //     publicAllocator.transferFee(recipient);
-    // }
+    function testSetFeeAccess(address sender, uint256 fee) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.setFee(fee);
+    }
 
-    // function testSetFeeAccess(address sender, uint256 fee) public {
-    //     vm.assume(sender != OWNER);
-    //     vm.prank(sender);
-    //     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-    //     publicAllocator.setFee(fee);
-    // }
+    function testSetCapAccess(address sender, Id id, uint256 cap) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.setCap(id, cap);
+    }
 
-    // function testSetCapAccess(address sender, Id id, uint256 cap) public {
-    //     vm.assume(sender != OWNER);
-    //     vm.prank(sender);
-    //     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-    //     publicAllocator.setCap(id, cap);
-    // }
+    function testReallocateNetting(uint128 flow) public {
+        flow = uint128(bound(flow, 0, CAP2));
+        vm.assume(flow != 0);
 
-    // function testReallocateNetting(uint128 flow) public {
-    //     flow = uint128(bound(flow, 0, CAP2));
-    //     vm.assume(flow != 0);
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
 
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
+        withdrawals.push(Withdrawal(idleParams, flow));
+        publicAllocator.withdrawTo(withdrawals,allMarkets[0]);
 
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
-    //     allocations.push(MarketAllocation(allMarkets[0], flow));
-    //     publicAllocator.reallocate(allocations);
+        delete withdrawals;
+        withdrawals.push(Withdrawal(allMarkets[0], flow));
+        publicAllocator.withdrawTo(withdrawals,idleParams);
+    }
 
-    //     delete allocations;
-    //     allocations.push(MarketAllocation(allMarkets[0], 0));
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT));
-    //     publicAllocator.reallocate(allocations);
-    // }
+    function testReallocateReset(uint128 flow) public {
+        flow = uint128(bound(flow, 0, CAP2 / 2));
+        vm.assume(flow != 0);
 
-    // function testReallocateReset(uint128 flow) public {
-    //     flow = uint128(bound(flow, 0, CAP2 / 2));
-    //     vm.assume(flow != 0);
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
 
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
+        withdrawals.push(Withdrawal(idleParams, flow));
+        publicAllocator.withdrawTo(withdrawals,allMarkets[0]);
 
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
-    //     allocations.push(MarketAllocation(allMarkets[0], flow));
-    //     publicAllocator.reallocate(allocations);
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
 
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
+        delete withdrawals;
 
-    //     delete allocations;
+        withdrawals.push(Withdrawal(idleParams, flow));
+        publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
+    }
 
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow * 2));
-    //     allocations.push(MarketAllocation(allMarkets[0], flow * 2));
-    //     publicAllocator.reallocate(allocations);
-    // }
+    function testFeeAmountSuccess(uint256 requiredFee, uint256 givenFee) public {
+        vm.prank(OWNER);
+        publicAllocator.setFee(requiredFee);
 
-    // function testFeeAmountSuccess(uint256 requiredFee, uint256 givenFee) public {
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFee(requiredFee);
+        givenFee = bound(givenFee, requiredFee, type(uint256).max);
+        vm.deal(address(this), givenFee);
 
-    //     givenFee = bound(givenFee, requiredFee, type(uint256).max);
-    //     vm.deal(address(this), givenFee);
+        publicAllocator.withdrawTo{value: givenFee}(withdrawals,allMarkets[0]);
+    }
 
-    //     publicAllocator.reallocate{value: givenFee}(allocations);
-    // }
+    function testFeeAmountFail(uint256 requiredFee, uint256 givenFee) public {
+        vm.assume(requiredFee > 0);
 
-    // function testFeeAmountFail(uint256 requiredFee, uint256 givenFee) public {
-    //     vm.assume(requiredFee > 0);
+        vm.prank(OWNER);
+        publicAllocator.setFee(requiredFee);
 
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFee(requiredFee);
+        givenFee = bound(givenFee, 0, requiredFee - 1);
+        vm.deal(address(this), givenFee);
+        vm.expectRevert(PAErrorsLib.FeeTooLow.selector);
 
-    //     givenFee = bound(givenFee, 0, requiredFee - 1);
-    //     vm.deal(address(this), givenFee);
-    //     vm.expectRevert(PAErrorsLib.FeeTooLow.selector);
+        publicAllocator.withdrawTo{value: givenFee}(withdrawals,allMarkets[0]);
+    }
 
-    //     publicAllocator.reallocate{value: givenFee}(allocations);
-    // }
+    function testTransferFeeSuccess() public {
+        vm.prank(OWNER);
+        publicAllocator.setFee(0.001 ether);
 
-    // function testTransferFeeSuccess() public {
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFee(0.001 ether);
+        publicAllocator.withdrawTo{value: 0.01 ether}(withdrawals,allMarkets[0]);
+        publicAllocator.withdrawTo{value: 0.005 ether}(withdrawals,allMarkets[0]);
 
-    //     publicAllocator.reallocate{value: 0.01 ether}(allocations);
-    //     publicAllocator.reallocate{value: 0.005 ether}(allocations);
+        uint256 before = address(this).balance;
 
-    //     uint256 before = address(this).balance;
+        vm.prank(OWNER);
+        publicAllocator.transferFee(address(this));
 
-    //     vm.prank(OWNER);
-    //     publicAllocator.transferFee(address(this));
+        assertEq(address(this).balance - before, 0.01 ether + 0.005 ether, "wrong fee transferred");
+    }
 
-    //     assertEq(address(this).balance - before, 0.01 ether + 0.005 ether, "wrong fee transferred");
-    // }
+    function testTransferFeeFail() public {
+        vm.prank(OWNER);
+        publicAllocator.setFee(0.001 ether);
 
-    // function testTransferFeeFail() public {
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFee(0.001 ether);
+        publicAllocator.withdrawTo{value: 0.01 ether}(withdrawals,allMarkets[0]);
 
-    //     publicAllocator.reallocate{value: 0.01 ether}(allocations);
+        CantReceive cr = new CantReceive();
+        vm.expectRevert(PAErrorsLib.FeeTransferFail.selector);
+        vm.prank(OWNER);
+        publicAllocator.transferFee(address(cr));
+    }
 
-    //     CantReceive cr = new CantReceive();
-    //     vm.expectRevert(PAErrorsLib.FeeTransferFail.selector);
-    //     vm.prank(OWNER);
-    //     publicAllocator.transferFee(address(cr));
-    // }
+    function testTransferOKOnZerobalance() public {
+        vm.prank(OWNER);
+        publicAllocator.setFee(0.001 ether);
 
-    // function testTransferOKOnZerobalance() public {
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFee(0.001 ether);
+        CantReceive cr = new CantReceive();
+        vm.prank(OWNER);
+        publicAllocator.transferFee(address(cr));
+    }
 
-    //     CantReceive cr = new CantReceive();
-    //     vm.prank(OWNER);
-    //     publicAllocator.transferFee(address(cr));
-    // }
+    receive() external payable {}
 
-    // receive() external payable {}
+    function testInflowGoesAboveCap(uint256 cap, uint128 flow) public {
+        cap = bound(cap, 0, CAP2 - 1);
+        flow = uint128(bound(flow, cap + 1, CAP2));
 
-    // function testInflowGoesAboveCap(uint256 cap, uint128 flow) public {
-    //     cap = bound(cap, 0, CAP2 - 1);
-    //     flow = uint128(bound(flow, cap + 1, CAP2));
+        vm.startPrank(OWNER);
+        publicAllocator.setCap(allMarkets[0].id(), cap);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        vm.stopPrank();
 
-    //     vm.startPrank(OWNER);
-    //     publicAllocator.setCap(allMarkets[0].id(), cap);
-    //     publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
-    //     publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
-    //     vm.stopPrank();
+        // Should work at cap
+        withdrawals.push(Withdrawal(idleParams, uint128(cap)));
+        publicAllocator.withdrawTo(withdrawals,allMarkets[0]);
 
-    //     // Should work at cap
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - cap));
-    //     allocations.push(MarketAllocation(allMarkets[0], cap));
-    //     publicAllocator.reallocate(allocations);
+        delete withdrawals;
 
-    //     // Should not work above cap
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
-    //     allocations.push(MarketAllocation(allMarkets[0], flow));
+        // Should not work above cap
+        withdrawals.push(Withdrawal(idleParams, uint128(flow-cap)));
 
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
-    //     );
-    //     publicAllocator.reallocate(allocations);
-    // }
+        vm.expectRevert(
+            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+        );
+        publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
+    }
 
-    // function testInflowStartsAboveCap(uint256 cap, uint128 flow) public {
-    //     cap = bound(cap, 0, CAP2 - 2);
-    //     flow = uint128(bound(flow, cap, CAP2 - 1));
+    function testInflowStartsAboveCap(uint256 cap, uint128 flow) public {
+        cap = bound(cap, 0, CAP2 - 2);
+        flow = uint128(bound(flow, cap, CAP2 - 1));
 
-    //     // Remove flow limits
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        // Remove flow limits
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
 
-    //     // Set supply above future public allocator cap
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
-    //     allocations.push(MarketAllocation(allMarkets[0], flow));
-    //     publicAllocator.reallocate(allocations);
+        // Set supply above future public allocator cap
+        withdrawals.push(Withdrawal(idleParams, flow));
+        publicAllocator.withdrawTo(withdrawals,allMarkets[0]);
 
-    //     // Set supply in market 0 > public allocation cap
-    //     vm.prank(OWNER);
-    //     publicAllocator.setCap(allMarkets[0].id(), cap);
+        // Set supply in market 0 > public allocation cap
+        vm.prank(OWNER);
+        publicAllocator.setCap(allMarkets[0].id(), cap);
 
-    //     // Increase supply even more (by 1)
-    //     allocations[0].assets = INITIAL_DEPOSIT - flow - 1;
-    //     allocations[1].assets = flow + 1;
+        // Increase supply even more (by 1)
+        withdrawals[0].amount = 1;
 
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
-    //     );
-    //     publicAllocator.reallocate(allocations);
-    // }
+        vm.expectRevert(
+            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+        );
+        publicAllocator.withdrawTo(withdrawals,allMarkets[0]);
+    }
 
-    // function testStrictOutflowStartsAboveCap(uint256 cap, uint128 flow, uint128 flow2) public {
-    //     cap = bound(cap, 0, CAP2 - 2);
-    //     flow = uint128(bound(flow, cap + 2, CAP2));
-    //     flow2 = uint128(bound(flow2, cap + 1, flow - 1));
+    function testStrictOutflowStartsAboveCap(uint256 cap, uint128 flow, uint128 flow2) public {
+        cap = bound(cap, 0, CAP2 - 2);
+        flow = uint128(bound(flow, cap + 2, CAP2));
+        flow2 = uint128(bound(flow2, cap + 1, flow - 1));
 
-    //     // Remove flow limits
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
-    //     vm.prank(OWNER);
-    //     publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        // Remove flow limits
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
 
-    //     // Set supply above future public allocator cap
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
-    //     allocations.push(MarketAllocation(allMarkets[0], flow));
-    //     publicAllocator.reallocate(allocations);
+        // Set supply above future public allocator cap
+        withdrawals.push(Withdrawal(idleParams, flow));
+        publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
 
-    //     // Set supply in market 0 > public allocation cap
-    //     vm.prank(OWNER);
-    //     publicAllocator.setCap(allMarkets[0].id(), cap);
+        // Set supply in market 0 > public allocation cap
+        vm.prank(OWNER);
+        publicAllocator.setCap(allMarkets[0].id(), cap);
 
-    //     // Strictly decrease supply
-    //     delete allocations;
-    //     allocations.push(MarketAllocation(allMarkets[0], flow2));
-    //     allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow2));
+        // Strictly decrease supply
+        delete withdrawals;
 
-    //     publicAllocator.reallocate(allocations);
-    // }
+        withdrawals.push(Withdrawal(allMarkets[0], flow-flow2));
+
+        publicAllocator.withdrawTo(withdrawals,idleParams);
+    }
 }
