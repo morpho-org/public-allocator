@@ -50,7 +50,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(flow != 0);
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
-        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.OutflowCapExceeded.selector, idleParams.id()));
+        vm.expectRevert(stdError.arithmeticError);
         publicAllocator.reallocate(allocations);
     }
 
@@ -60,7 +60,7 @@ contract PublicAllocatorTest is IntegrationTest {
         deal(address(loanToken), address(vault), flow);
         allocations.push(MarketAllocation(allMarkets[0], flow));
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
-        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.InflowCapExceeded.selector, allMarkets[0].id()));
+        vm.expectRevert(stdError.arithmeticError);
         publicAllocator.reallocate(allocations);
     }
 
@@ -68,7 +68,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0), false));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
     }
 
     function testTransferFeeAccess(address sender, address recipient) public {
@@ -97,9 +97,9 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(flow != 0);
 
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
 
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
@@ -116,18 +116,18 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(flow != 0);
 
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(flow, 0), false));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), false));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
 
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         publicAllocator.reallocate(allocations);
 
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(flow, 0), true));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, flow), true));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
 
         delete allocations;
 
@@ -203,8 +203,8 @@ contract PublicAllocatorTest is IntegrationTest {
 
         vm.startPrank(OWNER);
         publicAllocator.setCap(allMarkets[0].id(), cap);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, 0), false));
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, type(uint128).max), false));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
         vm.stopPrank();
 
         // Should work at cap
@@ -228,9 +228,9 @@ contract PublicAllocatorTest is IntegrationTest {
 
         // Remove flow limits
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, 0), false));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, type(uint128).max), false));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
 
         // Set supply above future public allocator cap
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
@@ -258,9 +258,9 @@ contract PublicAllocatorTest is IntegrationTest {
 
         // Remove flow limits
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, 0), false));
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(0, type(uint128).max), false));
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
 
         // Set supply above future public allocator cap
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));

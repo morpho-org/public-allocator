@@ -11,14 +11,13 @@ import {
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 struct FlowCaps {
-    uint128 outflow;
-    uint128 inflow;
+    uint128 maxIn;
+    uint128 maxOut;
 }
 
 struct FlowConfig {
     Id id;
     FlowCaps caps;
-    bool resetFlow;
 }
 
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
@@ -26,7 +25,6 @@ struct FlowConfig {
 interface IPublicAllocatorBase {
     function VAULT() external view returns (IMetaMorpho);
     function MORPHO() external view returns (IMorpho);
-    function flows(Id) external view returns (int256);
     function supplyCaps(Id) external view returns (uint256);
 
     function reallocate(MarketAllocation[] calldata allocations) external payable;
