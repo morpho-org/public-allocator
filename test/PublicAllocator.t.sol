@@ -212,6 +212,8 @@ contract PublicAllocatorTest is IntegrationTest {
         allocations.push(MarketAllocation(allMarkets[0], cap));
         publicAllocator.reallocate(allocations);
 
+        delete allocations;
+
         // Should not work above cap
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
