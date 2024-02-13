@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.21;
+pragma solidity 0.8.24;
 
 import {
     Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
 } from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
-import {
-    MarketParamsLib,
-    MorphoLib,
-    MorphoBalancesLib,
-    SharesMathLib,
-    Market,
-    UtilsLib
-} from "../lib/metamorpho/src/MetaMorpho.sol";
+
+import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
+
+import {MorphoLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoLib.sol";
+
+import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
+
+import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/SharesMathLib.sol";
+
+import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
+
 import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {FlowCaps, FlowConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
