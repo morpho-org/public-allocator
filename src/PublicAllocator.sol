@@ -56,7 +56,7 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
             uint256 newShares = MORPHO.supplyShares(id, address(VAULT));
             if (newShares >= shares[i]) {
                 // Withdrawing small enough amounts when the cap is already exceeded can result in the error below
-                if (newShares.toAssetsUp(market.totalSupplyAssets,market.totalSupplyShares) > supplyCaps[id]) {
+                if (newShares.toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares) > supplyCaps[id]) {
                     revert ErrorsLib.PublicAllocatorSupplyCapExceeded(id);
                 }
                 flows[id] +=
@@ -99,8 +99,8 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
         }
     }
 
-    // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap. 
-    function setCap(Id id, uint supplyCap) external onlyOwner {
+    // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
+    function setCap(Id id, uint256 supplyCap) external onlyOwner {
         supplyCaps[id] = supplyCap;
     }
 }

@@ -36,9 +36,9 @@ contract PublicAllocatorTest is IntegrationTest {
 
         // Remove public allocator caps by default
         vm.prank(OWNER);
-        publicAllocator.setCap(idleParams.id(), type(uint).max);
+        publicAllocator.setCap(idleParams.id(), type(uint256).max);
         vm.prank(OWNER);
-        publicAllocator.setCap(allMarkets[0].id(), type(uint).max);
+        publicAllocator.setCap(allMarkets[0].id(), type(uint256).max);
     }
 
     function testOwner() public {
@@ -85,12 +85,11 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFee(fee);
     }
 
-    function testSetCapAccess(address sender, Id id, uint cap) public {
+    function testSetCapAccess(address sender, Id id, uint256 cap) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         publicAllocator.setCap(id, cap);
-
     }
 
     function testReallocateNetting(uint128 flow) public {
@@ -198,9 +197,9 @@ contract PublicAllocatorTest is IntegrationTest {
 
     receive() external payable {}
 
-    function testInflowGoesAboveCap(uint cap, uint128 flow) public {
-        cap = bound(cap, 0, CAP2-1);
-        flow = uint128(bound(flow, cap+1, CAP2));
+    function testInflowGoesAboveCap(uint256 cap, uint128 flow) public {
+        cap = bound(cap, 0, CAP2 - 1);
+        flow = uint128(bound(flow, cap + 1, CAP2));
 
         vm.startPrank(OWNER);
         publicAllocator.setCap(allMarkets[0].id(), cap);
@@ -217,13 +216,15 @@ contract PublicAllocatorTest is IntegrationTest {
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
 
-        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())); 
+        vm.expectRevert(
+            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+        );
         publicAllocator.reallocate(allocations);
     }
 
-    function testInflowStartsAboveCap(uint cap, uint128 flow) public {
-        cap = bound(cap, 0, CAP2-2);
-        flow = uint128(bound(flow, cap, CAP2-1));
+    function testInflowStartsAboveCap(uint256 cap, uint128 flow) public {
+        cap = bound(cap, 0, CAP2 - 2);
+        flow = uint128(bound(flow, cap, CAP2 - 1));
 
         // Remove flow limits
         vm.prank(OWNER);
@@ -244,14 +245,16 @@ contract PublicAllocatorTest is IntegrationTest {
         allocations[0].assets = INITIAL_DEPOSIT - flow - 1;
         allocations[1].assets = flow + 1;
 
-        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id()));
+        vm.expectRevert(
+            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+        );
         publicAllocator.reallocate(allocations);
     }
 
-    function testStrictOutflowStartsAboveCap(uint cap, uint128 flow, uint128 flow2) public {
-        cap = bound(cap, 0, CAP2-2);
-        flow = uint128(bound(flow, cap+2, CAP2));
-        flow2 = uint128(bound(flow2,cap+1,flow-1));
+    function testStrictOutflowStartsAboveCap(uint256 cap, uint128 flow, uint128 flow2) public {
+        cap = bound(cap, 0, CAP2 - 2);
+        flow = uint128(bound(flow, cap + 2, CAP2));
+        flow2 = uint128(bound(flow2, cap + 1, flow - 1));
 
         // Remove flow limits
         vm.prank(OWNER);

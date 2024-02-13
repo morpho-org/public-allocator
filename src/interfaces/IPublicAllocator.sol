@@ -33,7 +33,7 @@ interface IPublicAllocatorBase {
     function setFee(uint256 _fee) external;
     function transferFee(address feeRecipient) external;
     function setFlow(FlowConfig calldata flowConfig) external;
-    function setCap(Id id, uint supplyCap) external;
+    function setCap(Id id, uint256 supplyCap) external;
 }
 
 /// @dev This interface is inherited by PublicAllocator so that function signatures are checked by the compiler.
