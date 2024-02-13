@@ -55,6 +55,7 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
         uint128 totalWithdrawn;
 
         for (uint256 i = 0; i < withdrawals.length; ++i) {
+            allocations[i].marketParams = withdrawals[i].marketParams;
             Id id = withdrawals[i].marketParams.id();
             uint assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams,address(VAULT));
             uint128 withdrawnAssets = withdrawals[i].amount;
@@ -69,7 +70,13 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
             flowCaps[id].maxOut -= withdrawnAssets;
         }
 
+        VAULT.reallocate(allocations);
+
         Id depositMarketId = depositMarketParams.id();
+        uint depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams,address(VAULT));
+        if (depositAssets > supplyCaps[depositMarketId]) {
+            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+        }
         flowCaps[depositMarketId].maxIn -= totalWithdrawn;
         flowCaps[depositMarketId].maxOut += totalWithdrawn;
 
