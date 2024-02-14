@@ -7,6 +7,7 @@ import {PublicAllocator, FlowConfig, FlowCaps} from "../src/PublicAllocator.sol"
 import {ErrorsLib as PAErrorsLib} from "../src/libraries/ErrorsLib.sol";
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 import {IPublicAllocator} from "../src/interfaces/IPublicAllocator.sol";
+import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
 uint256 constant CAP2 = 100e18;
 uint256 constant INITIAL_DEPOSIT = 4 * CAP2;
@@ -17,7 +18,9 @@ contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
     MarketAllocation[] internal allocations;
 
+
     using MarketParamsLib for MarketParams;
+    using MorphoBalancesLib for IMorpho;
 
     function setUp() public override {
         super.setUp();
@@ -301,5 +304,26 @@ contract PublicAllocatorTest is IntegrationTest {
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         publicAllocator.reallocate(allocations);
+    }
+
+    function testReallocationReallocates(uint128 flow) public {
+        flow = uint128(bound(flow, 0, CAP2));
+
+        // Set flow limits
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, type(uint128).max)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+
+        uint idleBefore = morpho.expectedSupplyAssets(idleParams, address(vault));
+        uint marketBefore = morpho.expectedSupplyAssets(allMarkets[0], address(vault));
+        allocations.push(MarketAllocation(idleParams,INITIAL_DEPOSIT - flow));
+        allocations.push(MarketAllocation(allMarkets[0], flow));
+        publicAllocator.reallocate(allocations);
+        uint idleAfter = morpho.expectedSupplyAssets(idleParams, address(vault));
+        uint marketAfter = morpho.expectedSupplyAssets(allMarkets[0], address(vault));
+
+        assertEq(idleBefore-idleAfter,flow);
+        assertEq(marketAfter-marketBefore,flow);
     }
 }
