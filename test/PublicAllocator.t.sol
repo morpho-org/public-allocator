@@ -18,7 +18,6 @@ contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
     MarketAllocation[] internal allocations;
 
-
     using MarketParamsLib for MarketParams;
     using MorphoBalancesLib for IMorpho;
 
@@ -315,15 +314,15 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
 
-        uint idleBefore = morpho.expectedSupplyAssets(idleParams, address(vault));
-        uint marketBefore = morpho.expectedSupplyAssets(allMarkets[0], address(vault));
-        allocations.push(MarketAllocation(idleParams,INITIAL_DEPOSIT - flow));
+        uint256 idleBefore = morpho.expectedSupplyAssets(idleParams, address(vault));
+        uint256 marketBefore = morpho.expectedSupplyAssets(allMarkets[0], address(vault));
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         publicAllocator.reallocate(allocations);
-        uint idleAfter = morpho.expectedSupplyAssets(idleParams, address(vault));
-        uint marketAfter = morpho.expectedSupplyAssets(allMarkets[0], address(vault));
+        uint256 idleAfter = morpho.expectedSupplyAssets(idleParams, address(vault));
+        uint256 marketAfter = morpho.expectedSupplyAssets(allMarkets[0], address(vault));
 
-        assertEq(idleBefore-idleAfter,flow);
-        assertEq(marketAfter-marketBefore,flow);
+        assertEq(idleBefore - idleAfter, flow);
+        assertEq(marketAfter - marketBefore, flow);
     }
 }
