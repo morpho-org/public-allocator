@@ -46,8 +46,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testReallocateCapZeroOutflowByDefault(uint256 flow) public {
-        flow = uint128(bound(flow, 0, CAP2));
-        vm.assume(flow != 0);
+        flow = uint128(bound(flow, 1, CAP2));
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         vm.expectRevert(stdError.arithmeticError);
@@ -55,8 +54,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testReallocateCapZeroInflowByDefault(uint128 flow) public {
-        flow = uint128(bound(flow, 0, CAP2));
-        vm.assume(flow != 0);
+        flow = uint128(bound(flow, 1, CAP2));
         deal(address(loanToken), address(vault), flow);
         allocations.push(MarketAllocation(allMarkets[0], flow));
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
@@ -93,8 +91,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testReallocateNetting(uint128 flow) public {
-        flow = uint128(bound(flow, 0, CAP2));
-        vm.assume(flow != 0);
+        flow = uint128(bound(flow, 1, CAP2));
 
         vm.prank(OWNER);
         publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
@@ -112,8 +109,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testReallocateReset(uint128 flow) public {
-        flow = uint128(bound(flow, 0, CAP2 / 2));
-        vm.assume(flow != 0);
+        flow = uint128(bound(flow, 1, CAP2 / 2));
 
         vm.prank(OWNER);
         publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
