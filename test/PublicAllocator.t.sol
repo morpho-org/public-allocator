@@ -276,4 +276,30 @@ contract PublicAllocatorTest is IntegrationTest {
 
         publicAllocator.reallocate(allocations);
     }
+
+    function testMaxOutNoOverflow(uint128 flow) public {
+        flow = uint128(bound(flow, 1, CAP2));
+        
+        // Set flow limits with supply market's maxOut to max
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, type(uint128).max)));
+        allocations.push(MarketAllocation(idleParams,INITIAL_DEPOSIT - flow));
+        allocations.push(MarketAllocation(allMarkets[0],flow));
+        publicAllocator.reallocate(allocations);
+    }
+
+    function testMaxInNoOverflow(uint128 flow) public {
+        flow = uint128(bound(flow, 1, CAP2));
+        
+        // Set flow limits with withdraw market's maxIn to max
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, type(uint128).max)));
+        vm.prank(OWNER);
+        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        allocations.push(MarketAllocation(idleParams,INITIAL_DEPOSIT - flow));
+        allocations.push(MarketAllocation(allMarkets[0],flow));
+        publicAllocator.reallocate(allocations);
+    }
 }

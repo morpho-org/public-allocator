@@ -14,7 +14,7 @@ import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries
 import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/SharesMathLib.sol";
 
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
-import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
+import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
 import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
@@ -26,6 +26,7 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     using MarketParamsLib for MarketParams;
     using SharesMathLib for uint256;
     using UtilsLib for uint256;
+    using UtilsLib for uint128;
 
     /// STORAGE ///
 
@@ -70,11 +71,11 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
                 uint128 inflow =
                     (newShares - shares[i]).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares).toUint128();
                 flowCaps[id].maxIn -= inflow;
-                flowCaps[id].maxOut += inflow;
+                flowCaps[id].maxOut = (flowCaps[id].maxOut).saturatingAdd(inflow);
             } else {
                 uint128 outflow =
                     (shares[i] - newShares).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares).toUint128();
-                flowCaps[id].maxIn += outflow;
+                flowCaps[id].maxIn = (flowCaps[id].maxIn).saturatingAdd(outflow);
                 flowCaps[id].maxOut -= outflow;
             }
         }

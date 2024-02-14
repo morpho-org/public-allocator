@@ -28,4 +28,7 @@ library ErrorsLib {
 
     /// @notice Thrown when the supply cap has been exceeded on market `id` during a reallocation of funds.
     error PublicAllocatorSupplyCapExceeded(Id id);
+
+    /// @notice Thrown when the maximum uint128 is exceeded.
+    error MaxUint128Exceeded();
 }
