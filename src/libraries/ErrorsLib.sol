@@ -31,4 +31,7 @@ library ErrorsLib {
 
     /// @notice Thrown when the maximum uint128 is exceeded.
     error MaxUint128Exceeded();
+
+    /// @notice Thrown when the caller doesn't have the allocator role.
+    error NotAllocatorRole(address sender);
 }

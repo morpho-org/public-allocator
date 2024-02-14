@@ -36,6 +36,7 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     IMorpho public immutable MORPHO;
     mapping(Id => FlowCaps) public flowCaps;
     mapping(Id => uint256) public supplyCaps;
+    mapping(address => bool) public isAllocator;
 
     /// CONSTRUCTOR ///
 
@@ -43,6 +44,18 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
         if (vault == address(0)) revert ErrorsLib.ZeroAddress();
         VAULT = IMetaMorpho(vault);
         MORPHO = VAULT.MORPHO();
+    }
+
+    /// MODIFIERS ///
+
+    /// @dev Reverts if the caller doesn't have the allocator role.
+    modifier onlyAllocatorRole() {
+        address sender = _msgSender();
+        if (!isAllocator[sender] && sender != owner()) {
+            revert ErrorsLib.NotAllocatorRole(sender);
+        }
+
+        _;
     }
 
     /// PUBLIC ///
@@ -93,14 +106,20 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
         }
     }
 
+    function setIsAllocator(address allocator, bool _isAllocator) external onlyOwner {
+        isAllocator[allocator] = _isAllocator;
+    }
+
+    /// ALLOCATOR ROLE ONLY ///
+
     // Set flow cap
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
-    function setFlow(FlowConfig calldata flowConfig) external onlyOwner {
+    function setFlow(FlowConfig calldata flowConfig) external onlyAllocatorRole {
         flowCaps[flowConfig.id] = flowConfig.caps;
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
-    function setCap(Id id, uint256 supplyCap) external onlyOwner {
+    function setCap(Id id, uint256 supplyCap) external onlyAllocatorRole {
         supplyCaps[id] = supplyCap;
     }
 }

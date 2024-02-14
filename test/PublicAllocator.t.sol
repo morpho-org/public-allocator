@@ -71,8 +71,23 @@ contract PublicAllocatorTest is IntegrationTest {
     function testConfigureFlowAccess(address sender) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.NotAllocatorRole.selector, sender));
         publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
+    }
+
+    function testSetIsAllocatorTrueAccess(address sender, address allocator) public {
+        vm.assume(sender != OWNER);
+        vm.assume(!publicAllocator.isAllocator(allocator));
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.setIsAllocator(allocator,true);
+    }
+
+    function testSetIsAllocatorFalseAccess(address sender) public {
+        vm.assume(sender != OWNER);
+        vm.prank(sender);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        publicAllocator.setIsAllocator(ALLOCATOR,false);
     }
 
     function testTransferFeeAccess(address sender, address payable recipient) public {
@@ -92,7 +107,7 @@ contract PublicAllocatorTest is IntegrationTest {
     function testSetCapAccess(address sender, Id id, uint256 cap) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.NotAllocatorRole.selector, sender));
         publicAllocator.setCap(id, cap);
     }
 
