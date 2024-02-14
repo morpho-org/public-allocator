@@ -23,6 +23,7 @@ import {FlowCaps, FlowConfig, IPublicAllocatorStaticTyping} from "./interfaces/I
 
 contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
+    using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
     using SharesMathLib for uint256;
     using UtilsLib for uint256;
@@ -51,30 +52,29 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
             revert ErrorsLib.FeeTooLow();
         }
 
-        uint256[] memory shares = new uint256[](allocations.length);
+        uint256[] memory assets = new uint256[](allocations.length);
         for (uint256 i = 0; i < allocations.length; ++i) {
-            shares[i] = MORPHO.supplyShares(allocations[i].marketParams.id(), address(VAULT));
+            assets[i] = MORPHO.expectedSupplyAssets(allocations[i].marketParams, address(VAULT));
         }
 
         VAULT.reallocate(allocations);
 
+        MarketParams memory marketParams;
         Market memory market;
         for (uint256 i = 0; i < allocations.length; ++i) {
-            Id id = allocations[i].marketParams.id();
+            marketParams = allocations[i].marketParams;
+            Id id = marketParams.id();
             market = MORPHO.market(id);
-            uint256 newShares = MORPHO.supplyShares(id, address(VAULT));
-            if (newShares >= shares[i]) {
-                // Withdrawing small enough amounts when the cap is already exceeded can result in the error below
-                if (newShares.toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares) > supplyCaps[id]) {
+            uint256 newAssets = MORPHO.expectedSupplyAssets(marketParams, address(VAULT));
+            if (newAssets >= assets[i]) {
+                if (newAssets > supplyCaps[id]) {
                     revert ErrorsLib.PublicAllocatorSupplyCapExceeded(id);
                 }
-                uint128 inflow =
-                    (newShares - shares[i]).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares).toUint128();
+                uint128 inflow = (newAssets - assets[i]).toUint128();
                 flowCaps[id].maxIn -= inflow;
                 flowCaps[id].maxOut = (flowCaps[id].maxOut).saturatingAdd(inflow);
             } else {
-                uint128 outflow =
-                    (shares[i] - newShares).toAssetsUp(market.totalSupplyAssets, market.totalSupplyShares).toUint128();
+                uint128 outflow = (assets[i] - newAssets).toUint128();
                 flowCaps[id].maxIn = (flowCaps[id].maxIn).saturatingAdd(outflow);
                 flowCaps[id].maxOut -= outflow;
             }
