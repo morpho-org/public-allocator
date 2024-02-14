@@ -29,7 +29,7 @@ interface IPublicAllocatorBase {
 
     function reallocate(MarketAllocation[] calldata allocations) external payable;
     function setFee(uint256 _fee) external;
-    function transferFee(address feeRecipient) external;
+    function transferFee(address payable feeRecipient) external;
     function setFlow(FlowConfig calldata flowConfig) external;
     function setCap(Id id, uint256 supplyCap) external;
 }

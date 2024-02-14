@@ -87,12 +87,9 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
         fee = _fee;
     }
 
-    function transferFee(address feeRecipient) external onlyOwner {
+    function transferFee(address payable feeRecipient) external onlyOwner {
         if (address(this).balance > 0) {
-            (bool success,) = feeRecipient.call{value: address(this).balance}("");
-            if (!success) {
-                revert ErrorsLib.FeeTransferFail();
-            }
+            feeRecipient.transfer(address(this).balance);
         }
     }
 

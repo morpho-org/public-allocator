@@ -12,7 +12,11 @@ import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries
 uint256 constant CAP2 = 100e18;
 uint256 constant INITIAL_DEPOSIT = 4 * CAP2;
 
-contract CantReceive {}
+contract CantReceive {
+    receive() external payable {
+        require(false, "cannot receive");
+    }
+}
 
 contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
@@ -71,7 +75,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
     }
 
-    function testTransferFeeAccess(address sender, address recipient) public {
+    function testTransferFeeAccess(address sender, address payable recipient) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
@@ -167,7 +171,7 @@ contract PublicAllocatorTest is IntegrationTest {
         uint256 before = address(this).balance;
 
         vm.prank(OWNER);
-        publicAllocator.transferFee(address(this));
+        publicAllocator.transferFee(payable(address(this)));
 
         assertEq(address(this).balance - before, 0.01 ether + 0.005 ether, "wrong fee transferred");
     }
@@ -179,9 +183,9 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.reallocate{value: 0.01 ether}(allocations);
 
         CantReceive cr = new CantReceive();
-        vm.expectRevert(PAErrorsLib.FeeTransferFail.selector);
+        vm.expectRevert("cannot receive");
         vm.prank(OWNER);
-        publicAllocator.transferFee(address(cr));
+        publicAllocator.transferFee(payable(address(cr)));
     }
 
     function testTransferOKOnZerobalance() public {
@@ -190,7 +194,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
         CantReceive cr = new CantReceive();
         vm.prank(OWNER);
-        publicAllocator.transferFee(address(cr));
+        publicAllocator.transferFee(payable(address(cr)));
     }
 
     receive() external payable {}
