@@ -14,7 +14,7 @@ import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries
 import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/SharesMathLib.sol";
 
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
-import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
+import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
 import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
@@ -26,6 +26,7 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     using MarketParamsLib for MarketParams;
     using SharesMathLib for uint256;
     using UtilsLib for uint256;
+    using UtilsLib for uint128;
 
     /// STORAGE ///
 
@@ -34,7 +35,6 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     IMorpho public immutable MORPHO;
     mapping(Id => FlowCaps) public flowCaps;
     mapping(Id => uint256) public supplyCaps;
-    // using IMorpho
 
     /// CONSTRUCTOR ///
 
@@ -46,21 +46,24 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
 
     /// PUBLIC ///
 
-    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams) external payable {
+    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
+        external
+        payable
+    {
         if (msg.value < fee) {
             revert ErrorsLib.FeeTooLow();
         }
 
-        MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length+1);
+        MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
         allocations[withdrawals.length].marketParams = depositMarketParams;
-        allocations[withdrawals.length].assets = type(uint).max;
+        allocations[withdrawals.length].assets = type(uint256).max;
 
         uint128 totalWithdrawn;
 
         for (uint256 i = 0; i < withdrawals.length; ++i) {
             allocations[i].marketParams = withdrawals[i].marketParams;
             Id id = withdrawals[i].marketParams.id();
-            uint assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams,address(VAULT));
+            uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
             uint128 withdrawnAssets = withdrawals[i].amount;
             // Clamp at 0 if withdrawnAssets is too big
             if (withdrawnAssets > assets) {
@@ -69,20 +72,19 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
 
             totalWithdrawn += withdrawnAssets;
             allocations[i].assets = assets - withdrawnAssets;
-            flowCaps[id].maxIn += withdrawnAssets;
+            flowCaps[id].maxIn = (flowCaps[id].maxIn).saturatingAdd(withdrawnAssets);
             flowCaps[id].maxOut -= withdrawnAssets;
         }
 
         VAULT.reallocate(allocations);
 
         Id depositMarketId = depositMarketParams.id();
-        uint depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams,address(VAULT));
+        uint256 depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
         if (depositAssets > supplyCaps[depositMarketId]) {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
         }
         flowCaps[depositMarketId].maxIn -= totalWithdrawn;
-        flowCaps[depositMarketId].maxOut += totalWithdrawn;
-
+        flowCaps[depositMarketId].maxOut = (flowCaps[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
     }
 
     /// OWNER ONLY ///

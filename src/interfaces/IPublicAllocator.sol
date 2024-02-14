@@ -33,7 +33,9 @@ interface IPublicAllocatorBase {
     function MORPHO() external view returns (IMorpho);
     function supplyCaps(Id) external view returns (uint256);
 
-    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams) external payable;
+    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
+        external
+        payable;
     function setFee(uint256 _fee) external;
     function transferFee(address feeRecipient) external;
     function setFlow(FlowConfig calldata flowConfig) external;
