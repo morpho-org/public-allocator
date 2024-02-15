@@ -78,7 +78,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         if (msg.value != fee) revert ErrorsLib.IncorrectFee();
 
         uint256[] memory assets = new uint256[](allocations.length);
-        for (uint256 i = 0; i < allocations.length; ++i) {
+        for (uint256 i = 0; i < allocations.length; i++) {
             // Do not compute interest twice for every market
             MORPHO.accrueInterest(allocations[i].marketParams);
             assets[i] = MORPHO.expectedSupplyAssets(allocations[i].marketParams, address(VAULT));
@@ -87,7 +87,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         VAULT.reallocate(allocations);
 
         MarketParams memory marketParams;
-        for (uint256 i = 0; i < allocations.length; ++i) {
+        for (uint256 i = 0; i < allocations.length; i++) {
             marketParams = allocations[i].marketParams;
             Id id = marketParams.id();
             uint256 newAssets = MORPHO.expectedSupplyAssets(marketParams, address(VAULT));
@@ -124,7 +124,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// @inheritdoc IPublicAllocatorBase
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
-        for (uint256 i = 0; i < flowCaps.length; ++i) {
+        for (uint256 i = 0; i < flowCaps.length; i++) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
 
@@ -133,7 +133,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// @inheritdoc IPublicAllocatorBase
     function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
-        for (uint256 i = 0; i < supplyCaps.length; ++i) {
+        for (uint256 i = 0; i < supplyCaps.length; i++) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
         }
 
