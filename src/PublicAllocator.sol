@@ -18,8 +18,12 @@ import {UtilsLib} from "./libraries/UtilsLib.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
-import {FlowCap, FlowConfig, SupplyConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
+import {FlowCap, FlowConfig, SupplyConfig, IPublicAllocatorStaticTyping, IPublicAllocatorBase} from "./interfaces/IPublicAllocator.sol";
 
+/// @title MetaMorpho
+/// @author Morpho Labs
+/// @custom:contact security@morpho.org
+/// @notice Publically callable allocator for a MetaMorpho vault.
 contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
     using MorphoBalancesLib for IMorpho;
@@ -30,18 +34,29 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// CONSTANTS ///
 
+    /// @inheritdoc IPublicAllocatorBase
     address public immutable OWNER;
+
+    /// @inheritdoc IPublicAllocatorBase
     IMorpho public immutable MORPHO;
+
+    /// @inheritdoc IPublicAllocatorBase
     IMetaMorpho public immutable VAULT;
 
     /// STORAGE ///
 
+    /// @inheritdoc IPublicAllocatorBase
     uint256 public fee;
+
+    /// @inheritdoc IPublicAllocatorStaticTyping
     mapping(Id => FlowCap) public flowCap;
+
+    /// @inheritdoc IPublicAllocatorBase
     mapping(Id => uint256) public supplyCap;
 
     /// MODIFIER ///
 
+    /// @dev Reverts if the caller is not the owner.
     modifier onlyOwner() {
         if (msg.sender != OWNER) revert ErrorsLib.NotOwner();
         _;
@@ -49,6 +64,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// CONSTRUCTOR ///
 
+    /// @dev Initializes the contract.
+    /// @param newOwner The owner of the contract.
+    /// @param vault The address of the MetaMorpho vault.
     constructor(address newOwner, address vault) {
         if (newOwner == address(0)) revert ErrorsLib.ZeroAddress();
         if (vault == address(0)) revert ErrorsLib.ZeroAddress();
@@ -59,6 +77,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// PUBLIC ///
 
+    /// @inheritdoc IPublicAllocatorBase
     function reallocate(MarketAllocation[] calldata allocations) external payable {
         if (msg.value != fee) revert ErrorsLib.IncorrectFee(msg.value);
 
@@ -93,20 +112,21 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// OWNER ONLY ///
 
+    /// @inheritdoc IPublicAllocatorBase
     function setFee(uint256 _fee) external onlyOwner {
         if (fee == _fee) revert ErrorsLib.AlreadySet();
         fee = _fee;
         emit EventsLib.SetFee(_fee);
     }
 
+    /// @inheritdoc IPublicAllocatorBase
     function transferFee(address payable feeRecipient) external onlyOwner {
         uint256 balance = address(this).balance;
         feeRecipient.transfer(balance);
         emit EventsLib.TransferFee(balance);
     }
 
-    // Set flow cap
-    // Doesn't revert if it doesn't change the storage at all
+    /// @inheritdoc IPublicAllocatorBase
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
         for (uint256 i = 0; i < flowCaps.length; ++i) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
@@ -115,8 +135,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         emit EventsLib.SetFlowCaps(flowCaps);
     }
 
-    // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
-    // Doesn't revert if it doesn't change the storage at all
+    /// @inheritdoc IPublicAllocatorBase
     function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
         for (uint256 i = 0; i < supplyCaps.length; ++i) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
