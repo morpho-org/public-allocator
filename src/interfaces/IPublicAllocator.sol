@@ -2,7 +2,12 @@
 pragma solidity ^0.8.21;
 
 import {
-    IMetaMorpho, IMorpho, MarketAllocation, Id, IOwnable, MarketParams
+    IMetaMorpho,
+    IMorpho,
+    MarketAllocation,
+    Id,
+    IOwnable,
+    MarketParams
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 struct FlowCap {

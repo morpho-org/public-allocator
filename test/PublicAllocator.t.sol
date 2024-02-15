@@ -175,20 +175,33 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testPublicReallocateEvent(uint128 flow, uint128 fee, address sender) public {
         vm.deal(sender, fee);
-        flow = uint128(bound(flow, 1, CAP2));
+        flow = uint128(bound(flow, 1, CAP2 / 2));
+
+        // Prepare public reallocation from 2 markets to 1
+        _setCap(allMarkets[1], CAP2);
+
+        MarketAllocation[] memory allocations = new MarketAllocation[](2);
+        allocations[0] = MarketAllocation(idleParams, INITIAL_DEPOSIT - flow);
+        allocations[1] = MarketAllocation(allMarkets[1], flow);
+        vm.prank(OWNER);
+        vault.reallocate(allocations);
 
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(0, flow)));
-        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(flow, 0)));
+        flowCaps.push(FlowConfig(allMarkets[1].id(), FlowCap(0, flow)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(2 * flow, 0)));
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
 
         withdrawals.push(Withdrawal(idleParams, flow));
+        withdrawals.push(Withdrawal(allMarkets[1], flow));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.PublicReallocate(sender, fee);
+        emit EventsLib.PublicWithdrawal(idleParams.id(), flow);
+        emit EventsLib.PublicWithdrawal(allMarkets[1].id(), flow);
+        emit EventsLib.PublicReallocateTo(sender, fee, allMarkets[0].id(), 2 * flow);
 
         vm.prank(sender);
-        publicAllocator.withdrawTo{value: fee}(withdrawals,allMarkets[0]);
+        publicAllocator.withdrawTo{value: fee}(withdrawals, allMarkets[0]);
     }
 
     function testReallocateNetting(uint128 flow) public {

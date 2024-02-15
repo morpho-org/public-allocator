@@ -19,7 +19,13 @@ import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contract
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
-import {FlowCap, FlowConfig, SupplyConfig, Withdrawal, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
+import {
+    FlowCap,
+    FlowConfig,
+    SupplyConfig,
+    Withdrawal,
+    IPublicAllocatorStaticTyping
+} from "./interfaces/IPublicAllocator.sol";
 
 contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
@@ -77,6 +83,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
             allocations[i].assets = assets - withdrawnAssets;
             flowCap[id].maxIn = (flowCap[id].maxIn).saturatingAdd(withdrawnAssets);
             flowCap[id].maxOut -= withdrawnAssets;
+            emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
 
         VAULT.reallocate(allocations);
@@ -88,8 +95,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         }
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
         flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
-
-        emit EventsLib.PublicReallocate(_msgSender(), msg.value);
+        emit EventsLib.PublicReallocateTo(_msgSender(), fee, depositMarketId, totalWithdrawn);
     }
 
     /// OWNER ONLY ///
