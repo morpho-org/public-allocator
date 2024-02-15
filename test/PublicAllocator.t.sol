@@ -2,9 +2,19 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
+import {
+    IntegrationTest,
+    MarketAllocation,
+    MarketParamsLib,
+    MarketParams,
+    IMorpho,
+    Id,
+    Ownable,
+    stdError
+} from "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
 import {PublicAllocator, FlowConfig, SupplyConfig, Withdrawal, FlowCap} from "../src/PublicAllocator.sol";
-import {ErrorsLib as PAErrorsLib} from "../src/libraries/ErrorsLib.sol";
+import {ErrorsLib} from "../src/libraries/ErrorsLib.sol";
+import {EventsLib} from "../src/libraries/EventsLib.sol";
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 import {IPublicAllocator} from "../src/interfaces/IPublicAllocator.sol";
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
@@ -75,7 +85,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
 
-    function testConfigureFlowAccess(address sender) public {
+    function testConfigureFlowAccessFail(address sender) public {
         vm.assume(sender != OWNER);
 
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(0, 0)));
@@ -85,26 +95,100 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlowCaps(flowCaps);
     }
 
-    function testTransferFeeAccess(address sender, address payable recipient) public {
+    function testTransferFeeAccessFail(address sender, address payable recipient) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         publicAllocator.transferFee(recipient);
     }
 
-    function testSetFeeAccess(address sender, uint256 fee) public {
+    function testSetFeeAccessFail(address sender, uint256 fee) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         publicAllocator.setFee(fee);
     }
 
-    function testSetCapAccess(address sender, Id id, uint256 cap) public {
+    function testSetCapAccessFail(address sender, Id id, uint256 cap) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         supplyCaps.push(SupplyConfig(id, cap));
         publicAllocator.setSupplyCaps(supplyCaps);
+    }
+
+    function testSetFee(uint256 fee) public {
+        vm.assume(fee != publicAllocator.fee());
+        vm.prank(OWNER);
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFee(fee);
+        publicAllocator.setFee(fee);
+        assertEq(publicAllocator.fee(), fee);
+    }
+
+    function testSetFeeAlreadySet(uint256 fee) public {
+        vm.assume(fee != publicAllocator.fee());
+        vm.prank(OWNER);
+        publicAllocator.setFee(fee);
+        vm.prank(OWNER);
+        vm.expectRevert(ErrorsLib.AlreadySet.selector);
+        publicAllocator.setFee(fee);
+    }
+
+    function testSetFlowCaps(uint128 in0, uint128 out0, uint128 in1, uint128 out1) public {
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(in0, out0)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(in1, out1)));
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFlowCaps(flowCaps);
+
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
+
+        FlowCap memory flowCap;
+        flowCap = publicAllocator.flowCap(idleParams.id());
+        assertEq(flowCap.maxIn, in0);
+        assertEq(flowCap.maxOut, out0);
+
+        flowCap = publicAllocator.flowCap(allMarkets[0].id());
+        assertEq(flowCap.maxIn, in1);
+        assertEq(flowCap.maxOut, out1);
+    }
+
+    function testSetSupplyCaps(uint256 cap0, uint256 cap1) public {
+        supplyCaps.push(SupplyConfig(idleParams.id(), cap0));
+        supplyCaps.push(SupplyConfig(allMarkets[0].id(), cap1));
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetSupplyCaps(supplyCaps);
+
+        vm.prank(OWNER);
+        publicAllocator.setSupplyCaps(supplyCaps);
+
+        uint256 cap;
+        cap = publicAllocator.supplyCap(idleParams.id());
+        assertEq(cap, cap0);
+
+        cap = publicAllocator.supplyCap(allMarkets[0].id());
+        assertEq(cap, cap1);
+    }
+
+    function testPublicReallocateEvent(uint128 flow, uint128 fee, address sender) public {
+        vm.deal(sender, fee);
+        flow = uint128(bound(flow, 1, CAP2));
+
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(0, flow)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(flow, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
+
+        withdrawals.push(Withdrawal(idleParams, flow));
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.PublicReallocate(sender, fee);
+
+        vm.prank(sender);
+        publicAllocator.withdrawTo{value: fee}(withdrawals,allMarkets[0]);
     }
 
     function testReallocateNetting(uint128 flow) public {
@@ -147,6 +231,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testFeeAmountSuccess(uint256 requiredFee, uint256 givenFee) public {
+        vm.assume(requiredFee != publicAllocator.fee());
         vm.prank(OWNER);
         publicAllocator.setFee(requiredFee);
 
@@ -164,7 +249,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
         givenFee = bound(givenFee, 0, requiredFee - 1);
         vm.deal(address(this), givenFee);
-        vm.expectRevert(PAErrorsLib.FeeTooLow.selector);
+        vm.expectRevert(ErrorsLib.FeeTooLow.selector);
 
         publicAllocator.withdrawTo{value: givenFee}(withdrawals, allMarkets[0]);
     }
@@ -230,7 +315,7 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals.push(Withdrawal(idleParams, uint128(flow - cap)));
 
         vm.expectRevert(
-            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+            abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
         );
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
@@ -258,7 +343,7 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals[0].amount = 1;
 
         vm.expectRevert(
-            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+            abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
         );
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }

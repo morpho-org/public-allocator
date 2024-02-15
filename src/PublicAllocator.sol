@@ -18,13 +18,8 @@ import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {
-    FlowCap,
-    FlowConfig,
-    SupplyConfig,
-    Withdrawal,
-    IPublicAllocatorStaticTyping
-} from "./interfaces/IPublicAllocator.sol";
+import {EventsLib} from "./libraries/EventsLib.sol";
+import {FlowCap, FlowConfig, SupplyConfig, Withdrawal, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
 
 contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
@@ -36,7 +31,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
 
     /// STORAGE ///
 
-    uint256 fee;
+    uint256 public fee;
     IMetaMorpho public immutable VAULT;
     IMorpho public immutable MORPHO;
     mapping(Id => FlowCap) public flowCap;
@@ -45,7 +40,9 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     /// CONSTRUCTOR ///
 
     constructor(address owner, address vault) Ownable(owner) {
-        if (vault == address(0)) revert ErrorsLib.ZeroAddress();
+        if (vault == address(0)) {
+            revert ErrorsLib.ZeroAddress();
+        }
         VAULT = IMetaMorpho(vault);
         MORPHO = VAULT.MORPHO();
     }
@@ -91,17 +88,25 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         }
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
         flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
+
+        emit EventsLib.PublicReallocate(_msgSender(), msg.value);
     }
 
     /// OWNER ONLY ///
 
     function setFee(uint256 _fee) external onlyOwner {
+        if (fee == _fee) {
+            revert ErrorsLib.AlreadySet();
+        }
         fee = _fee;
+        emit EventsLib.SetFee(_fee);
     }
 
     function transferFee(address payable feeRecipient) external onlyOwner {
+        uint256 balance = address(this).balance;
         if (address(this).balance > 0) {
             feeRecipient.transfer(address(this).balance);
+            emit EventsLib.SetFee(balance);
         }
     }
 
@@ -111,6 +116,8 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         for (uint256 i = 0; i < flowCaps.length; ++i) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
+
+        emit EventsLib.SetFlowCaps(flowCaps);
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
@@ -118,5 +125,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         for (uint256 i = 0; i < supplyCaps.length; ++i) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
         }
+
+        emit EventsLib.SetSupplyCaps(supplyCaps);
     }
 }

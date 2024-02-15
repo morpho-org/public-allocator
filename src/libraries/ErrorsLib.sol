@@ -31,4 +31,7 @@ library ErrorsLib {
 
     /// @notice Thrown when the maximum uint128 is exceeded.
     error MaxUint128Exceeded();
+
+    /// @notice Thrown when the value is already set.
+    error AlreadySet();
 }
