@@ -77,7 +77,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// @inheritdoc IPublicAllocatorBase
     function reallocate(MarketAllocation[] calldata allocations) external payable {
-        if (msg.value != fee) revert ErrorsLib.IncorrectFee(msg.value);
+        if (msg.value != fee) revert ErrorsLib.IncorrectFee();
 
         uint256[] memory assets = new uint256[](allocations.length);
         for (uint256 i = 0; i < allocations.length; ++i) {
@@ -105,7 +105,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             }
         }
 
-        emit EventsLib.PublicReallocate(msg.sender, msg.value);
+        emit EventsLib.PublicReallocate(msg.sender);
     }
 
     /// OWNER ONLY ///

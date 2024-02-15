@@ -176,8 +176,7 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(cap, cap1);
     }
 
-    function testPublicReallocateEvent(uint128 flow, uint128 fee, address sender) public {
-        vm.deal(sender, fee);
+    function testPublicReallocateEvent(uint128 flow, address sender) public {
         flow = uint128(bound(flow, 1, CAP2));
 
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(0, flow)));
@@ -186,19 +185,14 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
 
-        if (fee != publicAllocator.fee()) {
-            vm.prank(OWNER);
-            publicAllocator.setFee(fee);
-        }
-
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.PublicReallocate(sender, fee);
+        emit EventsLib.PublicReallocate(sender);
 
         vm.prank(sender);
-        publicAllocator.reallocate{value: fee}(allocations);
+        publicAllocator.reallocate(allocations);
     }
 
     function testReallocateNetting(uint128 flow) public {
@@ -262,7 +256,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFee(requiredFee);
 
         vm.deal(address(this), givenFee);
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.IncorrectFee.selector,givenFee));
+        vm.expectRevert(ErrorsLib.IncorrectFee.selector);
 
         publicAllocator.reallocate{value: givenFee}(allocations);
     }
