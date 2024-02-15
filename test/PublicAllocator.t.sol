@@ -87,28 +87,28 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(0, 0)));
 
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        vm.expectRevert(ErrorsLib.NotOwner.selector);
         publicAllocator.setFlowCaps(flowCaps);
     }
 
     function testTransferFeeAccessFail(address sender, address payable recipient) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        vm.expectRevert(ErrorsLib.NotOwner.selector);
         publicAllocator.transferFee(recipient);
     }
 
     function testSetFeeAccessFail(address sender, uint256 fee) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        vm.expectRevert(ErrorsLib.NotOwner.selector);
         publicAllocator.setFee(fee);
     }
 
     function testSetCapAccessFail(address sender, Id id, uint256 cap) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
+        vm.expectRevert(ErrorsLib.NotOwner.selector);
         supplyCaps.push(SupplyConfig(id, cap));
         publicAllocator.setSupplyCaps(supplyCaps);
     }
@@ -270,7 +270,7 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(address(this).balance - before, 0.01 ether + 0.005 ether, "wrong fee transferred");
     }
 
-    function testTransferFeeFail() public {
+    function testTransferFeeFailCannotReceive() public {
         vm.prank(OWNER);
         publicAllocator.setFee(0.001 ether);
 
@@ -278,15 +278,6 @@ contract PublicAllocatorTest is IntegrationTest {
 
         CantReceive cr = new CantReceive();
         vm.expectRevert("cannot receive");
-        vm.prank(OWNER);
-        publicAllocator.transferFee(payable(address(cr)));
-    }
-
-    function testTransferOKOnZerobalance() public {
-        vm.prank(OWNER);
-        publicAllocator.setFee(0.001 ether);
-
-        CantReceive cr = new CantReceive();
         vm.prank(OWNER);
         publicAllocator.transferFee(payable(address(cr)));
     }
