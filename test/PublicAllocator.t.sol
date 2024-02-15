@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
-import {PublicAllocator, FlowConfig, FlowCaps} from "../src/PublicAllocator.sol";
+import {PublicAllocator, FlowConfig, SupplyConfig, FlowCaps} from "../src/PublicAllocator.sol";
 import {ErrorsLib as PAErrorsLib} from "../src/libraries/ErrorsLib.sol";
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 import {IPublicAllocator} from "../src/interfaces/IPublicAllocator.sol";
@@ -21,6 +21,8 @@ contract CantReceive {
 contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
     MarketAllocation[] internal allocations;
+    FlowConfig[] internal flowCaps;
+    SupplyConfig[] internal supplyCaps;
 
     using MarketParamsLib for MarketParams;
     using MorphoBalancesLib for IMorpho;
@@ -41,10 +43,11 @@ contract PublicAllocatorTest is IntegrationTest {
         _sortSupplyQueueIdleLast();
 
         // Remove public allocator caps by default
+        supplyCaps.push(SupplyConfig(idleParams.id(), type(uint256).max));
+        supplyCaps.push(SupplyConfig(allMarkets[0].id(), type(uint256).max));
         vm.prank(OWNER);
-        publicAllocator.setCap(idleParams.id(), type(uint256).max);
-        vm.prank(OWNER);
-        publicAllocator.setCap(allMarkets[0].id(), type(uint256).max);
+        publicAllocator.setSupplyCaps(supplyCaps);
+        delete supplyCaps;
     }
 
     function testOwner() public {
@@ -70,9 +73,12 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testConfigureFlowAccess(address sender) public {
         vm.assume(sender != OWNER);
+
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
+
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
     }
 
     function testTransferFeeAccess(address sender, address payable recipient) public {
@@ -93,16 +99,17 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-        publicAllocator.setCap(id, cap);
+        supplyCaps.push(SupplyConfig(id,cap));
+        publicAllocator.setSupplyCaps(supplyCaps);
     }
 
     function testReallocateNetting(uint128 flow) public {
         flow = uint128(bound(flow, 1, CAP2));
 
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
 
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
@@ -117,19 +124,20 @@ contract PublicAllocatorTest is IntegrationTest {
     function testReallocateReset(uint128 flow) public {
         flow = uint128(bound(flow, 1, CAP2 / 2));
 
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
 
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         publicAllocator.reallocate(allocations);
 
+        delete flowCaps;
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, flow)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(flow, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
 
         delete allocations;
 
@@ -203,11 +211,14 @@ contract PublicAllocatorTest is IntegrationTest {
         cap = bound(cap, 0, CAP2 - 1);
         flow = uint128(bound(flow, cap + 1, CAP2));
 
-        vm.startPrank(OWNER);
-        publicAllocator.setCap(allMarkets[0].id(), cap);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
-        vm.stopPrank();
+        supplyCaps.push(SupplyConfig(allMarkets[0].id(), cap));
+        vm.prank(OWNER);
+        publicAllocator.setSupplyCaps(supplyCaps);
+
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
 
         // Should work at cap
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - cap));
@@ -231,10 +242,10 @@ contract PublicAllocatorTest is IntegrationTest {
         flow = uint128(bound(flow, cap, CAP2 - 1));
 
         // Remove flow limits
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
 
         // Set supply above future public allocator cap
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
@@ -242,8 +253,9 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.reallocate(allocations);
 
         // Set supply in market 0 > public allocation cap
+        supplyCaps.push(SupplyConfig(allMarkets[0].id(), cap));
         vm.prank(OWNER);
-        publicAllocator.setCap(allMarkets[0].id(), cap);
+        publicAllocator.setSupplyCaps(supplyCaps);
 
         // Increase supply even more (by 1)
         allocations[0].assets = INITIAL_DEPOSIT - flow - 1;
@@ -261,10 +273,10 @@ contract PublicAllocatorTest is IntegrationTest {
         flow2 = uint128(bound(flow2, cap + 1, flow - 1));
 
         // Remove flow limits
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
 
         // Set supply above future public allocator cap
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
@@ -272,8 +284,9 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.reallocate(allocations);
 
         // Set supply in market 0 > public allocation cap
+        supplyCaps.push(SupplyConfig(allMarkets[0].id(), cap));
         vm.prank(OWNER);
-        publicAllocator.setCap(allMarkets[0].id(), cap);
+        publicAllocator.setSupplyCaps(supplyCaps);
 
         // Strictly decrease supply
         delete allocations;
@@ -287,10 +300,11 @@ contract PublicAllocatorTest is IntegrationTest {
         flow = uint128(bound(flow, 1, CAP2));
 
         // Set flow limits with supply market's maxOut to max
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, type(uint128).max)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, type(uint128).max)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, type(uint128).max)));
+        publicAllocator.setFlowCaps(flowCaps);
+
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         publicAllocator.reallocate(allocations);
@@ -300,10 +314,11 @@ contract PublicAllocatorTest is IntegrationTest {
         flow = uint128(bound(flow, 1, CAP2));
 
         // Set flow limits with withdraw market's maxIn to max
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, type(uint128).max)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, type(uint128).max)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
+
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
         allocations.push(MarketAllocation(allMarkets[0], flow));
         publicAllocator.reallocate(allocations);
@@ -313,10 +328,10 @@ contract PublicAllocatorTest is IntegrationTest {
         flow = uint128(bound(flow, 0, CAP2));
 
         // Set flow limits
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, type(uint128).max)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
         vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(type(uint128).max, type(uint128).max)));
-        vm.prank(OWNER);
-        publicAllocator.setFlow(FlowConfig(allMarkets[0].id(), FlowCaps(type(uint128).max, 0)));
+        publicAllocator.setFlowCaps(flowCaps);
 
         uint256 idleBefore = morpho.expectedSupplyAssets(idleParams, address(vault));
         uint256 marketBefore = morpho.expectedSupplyAssets(allMarkets[0], address(vault));

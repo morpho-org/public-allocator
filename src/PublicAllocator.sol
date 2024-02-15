@@ -17,11 +17,10 @@ import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.s
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
-import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {FlowCaps, FlowConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
+import {FlowCaps, FlowConfig, SupplyConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
 
-contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTyping {
+contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
@@ -94,12 +93,17 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     }
 
     // Set flow cap
-    function setFlow(FlowConfig calldata flowConfig) external onlyOwner {
-        flowCaps[flowConfig.id] = flowConfig.caps;
+    // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
+    function setFlowCaps(FlowConfig[] calldata _flowCaps) external onlyOwner {
+        for (uint i = 0; i < _flowCaps.length; ++i) {
+            flowCaps[_flowCaps[i].id] = _flowCaps[i].caps;
+        }
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
-    function setCap(Id id, uint256 supplyCap) external onlyOwner {
-        supplyCaps[id] = supplyCap;
+    function setSupplyCaps(SupplyConfig[] calldata _supplyCaps) external onlyOwner {
+        for (uint i = 0; i < _supplyCaps.length; ++i) {
+            supplyCaps[_supplyCaps[i].id] = _supplyCaps[i].cap;
+        }
     }
 }
