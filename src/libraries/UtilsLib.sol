@@ -15,7 +15,7 @@ library UtilsLib {
         return uint128(x);
     }
 
-    // Returns min(x+y,type(uint128).max)
+    /// @dev Returns min(x+y,type(uint128).max).
     function saturatingAdd(uint128 x, uint128 y) internal pure returns (uint128 z) {
         assembly ("memory-safe") {
             let sum := add(x, y)
