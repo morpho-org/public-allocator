@@ -2,9 +2,10 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
+import {IntegrationTest, MarketAllocation, MarketParamsLib, MarketParams, IMorpho, Id, Ownable, stdError} from "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
 import {PublicAllocator, FlowConfig, SupplyConfig, FlowCap} from "../src/PublicAllocator.sol";
-import {ErrorsLib as PAErrorsLib} from "../src/libraries/ErrorsLib.sol";
+import {ErrorsLib} from "../src/libraries/ErrorsLib.sol";
+import {EventsLib} from "../src/libraries/EventsLib.sol";
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 import {IPublicAllocator} from "../src/interfaces/IPublicAllocator.sol";
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
@@ -71,7 +72,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.reallocate(allocations);
     }
 
-    function testConfigureFlowAccess(address sender) public {
+    function testConfigureFlowAccessFail(address sender) public {
         vm.assume(sender != OWNER);
 
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(0, 0)));
@@ -81,21 +82,21 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlowCaps(flowCaps);
     }
 
-    function testTransferFeeAccess(address sender, address payable recipient) public {
+    function testTransferFeeAccessFail(address sender, address payable recipient) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         publicAllocator.transferFee(recipient);
     }
 
-    function testSetFeeAccess(address sender, uint256 fee) public {
+    function testSetFeeAccessFail(address sender, uint256 fee) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
         publicAllocator.setFee(fee);
     }
 
-    function testSetCapAccess(address sender, Id id, uint256 cap) public {
+    function testSetCapAccessFail(address sender, Id id, uint256 cap) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
@@ -229,7 +230,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
         givenFee = bound(givenFee, 0, requiredFee - 1);
         vm.deal(address(this), givenFee);
-        vm.expectRevert(PAErrorsLib.FeeTooLow.selector);
+        vm.expectRevert(ErrorsLib.FeeTooLow.selector);
 
         publicAllocator.reallocate{value: givenFee}(allocations);
     }
@@ -297,7 +298,7 @@ contract PublicAllocatorTest is IntegrationTest {
         allocations.push(MarketAllocation(allMarkets[0], flow));
 
         vm.expectRevert(
-            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+            abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
         );
         publicAllocator.reallocate(allocations);
     }
@@ -327,7 +328,7 @@ contract PublicAllocatorTest is IntegrationTest {
         allocations[1].assets = flow + 1;
 
         vm.expectRevert(
-            abi.encodeWithSelector(PAErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
+            abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
         );
         publicAllocator.reallocate(allocations);
     }
