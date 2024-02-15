@@ -50,7 +50,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// CONSTRUCTOR ///
 
     constructor(address newOwner, address vault) {
-        // if (owner == address(0)) revert ZeroAddress();
+        if (newOwner == address(0)) revert ErrorsLib.ZeroAddress();
         if (vault == address(0)) revert ErrorsLib.ZeroAddress();
         owner = newOwner;
         VAULT = IMetaMorpho(vault);
