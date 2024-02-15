@@ -29,13 +29,13 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     using UtilsLib for uint128;
 
     /// CONSTANTS ///
-    
-    IMetaMorpho public immutable VAULT;
+
+    address public immutable OWNER;
     IMorpho public immutable MORPHO;
-    
+    IMetaMorpho public immutable VAULT;
+
     /// STORAGE ///
 
-    address public immutable owner;
     uint256 public fee;
     mapping(Id => FlowCap) public flowCap;
     mapping(Id => uint256) public supplyCap;
@@ -43,16 +43,16 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// MODIFIER ///
 
     modifier onlyOwner() {
-        if (msg.sender != owner) revert ErrorsLib.NotOwner();
+        if (msg.sender != OWNER) revert ErrorsLib.NotOwner();
         _;
     }
-    
+
     /// CONSTRUCTOR ///
 
     constructor(address newOwner, address vault) {
         if (newOwner == address(0)) revert ErrorsLib.ZeroAddress();
         if (vault == address(0)) revert ErrorsLib.ZeroAddress();
-        owner = newOwner;
+        OWNER = newOwner;
         VAULT = IMetaMorpho(vault);
         MORPHO = VAULT.MORPHO();
     }

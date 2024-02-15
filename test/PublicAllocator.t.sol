@@ -61,7 +61,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testOwner() public {
-        assertEq(publicAllocator.owner(), address(OWNER));
+        assertEq(publicAllocator.OWNER(), address(OWNER));
     }
 
     function testDeployAddressZeroFail() public {
@@ -290,9 +290,9 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testTransferOKOnZerobalance() public {
-         vm.prank(OWNER);
-         publicAllocator.transferFee(payable(address(this)));
-     }
+        vm.prank(OWNER);
+        publicAllocator.transferFee(payable(address(this)));
+    }
 
     receive() external payable {}
 
