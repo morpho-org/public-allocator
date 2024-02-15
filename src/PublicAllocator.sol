@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.24;
 
 import {
@@ -59,7 +59,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         external
         payable
     {
-        if (msg.value < fee) {
+        if (msg.value != fee) {
             revert ErrorsLib.FeeTooLow();
         }
 
@@ -117,7 +117,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     }
 
     // Set flow cap
-    // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
+    // Doesn't revert if it doesn't change the storage at all
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
         for (uint256 i = 0; i < flowCaps.length; ++i) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
@@ -127,6 +127,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
+    // Doesn't revert if it doesn't change the storage at all
     function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
         for (uint256 i = 0; i < supplyCaps.length; ++i) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
