@@ -135,7 +135,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
 
-        emit EventsLib.SetFlowCaps(flowCaps);
+        emit EventsLib.SetFlowCaps(_msgSender(), flowCaps);
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
@@ -144,6 +144,6 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
         }
 
-        emit EventsLib.SetSupplyCaps(supplyCaps);
+        emit EventsLib.SetSupplyCaps(_msgSender(), supplyCaps);
     }
 }

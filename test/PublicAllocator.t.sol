@@ -169,14 +169,16 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setIsCurator(account, isCurator);
     }
 
-    function testSetFlowCaps(uint128 in0, uint128 out0, uint128 in1, uint128 out1) public {
+    function testSetFlowCaps(uint128 in0, uint128 out0, uint128 in1, uint128 out1, bool useOwner) public {
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(in0, out0)));
         flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(in1, out1)));
 
-        vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFlowCaps(flowCaps);
+        address sender = useOwner ? OWNER : PUBLIC_ALLOCATOR_CURATOR;
 
-        vm.prank(OWNER);
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFlowCaps(sender, flowCaps);
+
+        vm.prank(sender);
         publicAllocator.setFlowCaps(flowCaps);
 
         FlowCap memory flowCap;
@@ -189,14 +191,16 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(flowCap.maxOut, out1);
     }
 
-    function testSetSupplyCaps(uint256 cap0, uint256 cap1) public {
+    function testSetSupplyCaps(uint256 cap0, uint256 cap1, bool useOwner) public {
         supplyCaps.push(SupplyConfig(idleParams.id(), cap0));
         supplyCaps.push(SupplyConfig(allMarkets[0].id(), cap1));
 
-        vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetSupplyCaps(supplyCaps);
+        address sender = useOwner ? OWNER : PUBLIC_ALLOCATOR_CURATOR;
 
-        vm.prank(OWNER);
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetSupplyCaps(sender, supplyCaps);
+
+        vm.prank(sender);
         publicAllocator.setSupplyCaps(supplyCaps);
 
         uint256 cap;

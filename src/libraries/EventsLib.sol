@@ -15,10 +15,10 @@ library EventsLib {
     event SetFee(uint256 fee);
 
     /// @notice Emitted when the owner updates some flow caps
-    event SetFlowCaps(FlowConfig[] flowCaps);
+    event SetFlowCaps(address sender, FlowConfig[] flowCaps);
 
     /// @notice Emitted when the owner updates some supply caps
-    event SetSupplyCaps(SupplyConfig[] supplyCaps);
+    event SetSupplyCaps(address sender, SupplyConfig[] supplyCaps);
 
     /// @notice Emitted when the owner changes a curator status
     event SetIsCurator(address account, bool accountIsCurator);
