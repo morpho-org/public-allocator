@@ -8,6 +8,9 @@ import {Id} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 /// @custom:contact security@morpho.org
 /// @notice Library exposing error messages.
 library ErrorsLib {
+    /// @notice Thrown when the `msg.sender` is not the `owner`.
+    error NotOwner();
+
     /// @notice Thrown when the address passed is the zero address.
     error ZeroAddress();
 
@@ -20,8 +23,8 @@ library ErrorsLib {
     /// @notice Thrown when flow configuration for market `id` has min flow > max flow
     error InconsistentFlowConfig(Id id);
 
-    /// @notice Thrown when the reallocation fee given is too low
-    error FeeTooLow();
+    /// @notice Thrown when the reallocation fee given is wrong
+    error IncorrectFee(uint givenFee);
 
     /// @notice Thrown when the fee recipient fails to receive the fee
     error FeeTransferFail();
