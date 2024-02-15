@@ -121,7 +121,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != PUBLIC_ALLOCATOR_CURATOR);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.NotCuratorRole.selector, sender));
-        supplyCaps.push(SupplyConfig(id,cap));
+        supplyCaps.push(SupplyConfig(id, cap));
         publicAllocator.setSupplyCaps(supplyCaps);
     }
 

@@ -114,14 +114,14 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     // Set flow cap
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyCuratorRole {
-        for (uint i = 0; i < flowCaps.length; ++i) {
+        for (uint256 i = 0; i < flowCaps.length; ++i) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
     function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyCuratorRole {
-        for (uint i = 0; i < supplyCaps.length; ++i) {
+        for (uint256 i = 0; i < supplyCaps.length; ++i) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
         }
     }

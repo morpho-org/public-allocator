@@ -2,11 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {
-    IMetaMorpho,
-    IMorpho,
-    MarketAllocation,
-    Id,
-    IOwnable
+    IMetaMorpho, IMorpho, MarketAllocation, Id, IOwnable
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 struct FlowCap {
@@ -21,7 +17,7 @@ struct FlowConfig {
 
 struct SupplyConfig {
     Id id;
-    uint cap;
+    uint256 cap;
 }
 
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
