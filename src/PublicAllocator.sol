@@ -60,7 +60,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// PUBLIC ///
 
     function reallocate(MarketAllocation[] calldata allocations) external payable {
-        if (msg.value != fee) revert ErrorsLib.FeeTooLow();
+        if (msg.value != fee) revert ErrorsLib.IncorrectFee(msg.value);
 
         uint256[] memory assets = new uint256[](allocations.length);
         for (uint256 i = 0; i < allocations.length; ++i) {
