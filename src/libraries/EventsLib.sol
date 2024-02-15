@@ -15,10 +15,10 @@ library EventsLib {
 
     /// @notice Emitted when the owner changes the `fee`
     event SetFee(uint256 fee);
-
-    /// @notice Emitted when the owner updates some flow caps
+    /// @notice Emitted when the owner transfers the fee.
+    event TransferFee(uint256 amount);
+    /// @notice Emitted when the owner updates some flow caps.
     event SetFlowCaps(FlowConfig[] flowCaps);
-
-    /// @notice Emitted when the owner updates some supply caps
+    /// @notice Emitted when the owner updates some supply caps.
     event SetSupplyCaps(SupplyConfig[] supplyCaps);
 }

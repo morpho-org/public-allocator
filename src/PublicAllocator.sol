@@ -15,7 +15,6 @@ import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/Sha
 
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {UtilsLib} from "./libraries/UtilsLib.sol";
-import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
@@ -27,7 +26,7 @@ import {
     IPublicAllocatorStaticTyping
 } from "./interfaces/IPublicAllocator.sol";
 
-contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
+contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
@@ -35,20 +34,31 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     using UtilsLib for uint256;
     using UtilsLib for uint128;
 
+    /// CONSTANTS ///
+
+    address public immutable OWNER;
+    IMorpho public immutable MORPHO;
+    IMetaMorpho public immutable VAULT;
+
     /// STORAGE ///
 
     uint256 public fee;
-    IMetaMorpho public immutable VAULT;
-    IMorpho public immutable MORPHO;
     mapping(Id => FlowCap) public flowCap;
     mapping(Id => uint256) public supplyCap;
 
+    /// MODIFIER ///
+
+    modifier onlyOwner() {
+        if (msg.sender != OWNER) revert ErrorsLib.NotOwner();
+        _;
+    }
+
     /// CONSTRUCTOR ///
 
-    constructor(address owner, address vault) Ownable(owner) {
-        if (vault == address(0)) {
-            revert ErrorsLib.ZeroAddress();
-        }
+    constructor(address newOwner, address vault) {
+        if (newOwner == address(0)) revert ErrorsLib.ZeroAddress();
+        if (vault == address(0)) revert ErrorsLib.ZeroAddress();
+        OWNER = newOwner;
         VAULT = IMetaMorpho(vault);
         MORPHO = VAULT.MORPHO();
     }
@@ -59,9 +69,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         external
         payable
     {
-        if (msg.value != fee) {
-            revert ErrorsLib.FeeTooLow();
-        }
+        if (msg.value != fee) revert ErrorsLib.IncorrectFee(msg.value);
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
         allocations[withdrawals.length].marketParams = depositMarketParams;
@@ -90,30 +98,24 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
 
         Id depositMarketId = depositMarketParams.id();
         uint256 depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
-        if (depositAssets > supplyCap[depositMarketId]) {
-            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
-        }
+        if (depositAssets > supplyCap[depositMarketId]) revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
         flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
-        emit EventsLib.PublicReallocateTo(_msgSender(), fee, depositMarketId, totalWithdrawn);
+        emit EventsLib.PublicReallocateTo(msg.sender, fee, depositMarketId, totalWithdrawn);
     }
 
     /// OWNER ONLY ///
 
     function setFee(uint256 _fee) external onlyOwner {
-        if (fee == _fee) {
-            revert ErrorsLib.AlreadySet();
-        }
+        if (fee == _fee) revert ErrorsLib.AlreadySet();
         fee = _fee;
         emit EventsLib.SetFee(_fee);
     }
 
     function transferFee(address payable feeRecipient) external onlyOwner {
         uint256 balance = address(this).balance;
-        if (address(this).balance > 0) {
-            feeRecipient.transfer(address(this).balance);
-            emit EventsLib.SetFee(balance);
-        }
+        feeRecipient.transfer(balance);
+        emit EventsLib.TransferFee(balance);
     }
 
     // Set flow cap
