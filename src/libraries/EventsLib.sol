@@ -9,10 +9,10 @@ import {FlowConfig, SupplyConfig} from "../interfaces/IPublicAllocator.sol";
 /// @notice Library exposing events.
 library EventsLib {
     /// @notice Emitted when the public reallocation is triggered
-    event PublicReallocate(address sender, uint fee);
+    event PublicReallocate(address sender, uint256 fee);
 
     /// @notice Emitted when the owner changes the `fee`
-    event SetFee(uint fee);
+    event SetFee(uint256 fee);
 
     /// @notice Emitted when the owner updates some flow caps
     event SetFlowCaps(FlowConfig[] flowCaps);

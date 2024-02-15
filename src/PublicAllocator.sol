@@ -40,7 +40,9 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     /// CONSTRUCTOR ///
 
     constructor(address owner, address vault) Ownable(owner) {
-        if (vault == address(0)) revert ErrorsLib.ZeroAddress();
+        if (vault == address(0)) {
+            revert ErrorsLib.ZeroAddress();
+        }
         VAULT = IMetaMorpho(vault);
         MORPHO = VAULT.MORPHO();
     }
@@ -82,7 +84,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
             }
         }
 
-        emit EventsLib.PublicReallocate(_msgSender(),msg.value);
+        emit EventsLib.PublicReallocate(_msgSender(), msg.value);
     }
 
     /// OWNER ONLY ///
@@ -96,7 +98,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     }
 
     function transferFee(address payable feeRecipient) external onlyOwner {
-        uint balance = address(this).balance;
+        uint256 balance = address(this).balance;
         if (address(this).balance > 0) {
             feeRecipient.transfer(address(this).balance);
             emit EventsLib.SetFee(balance);
@@ -106,7 +108,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     // Set flow cap
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
-        for (uint i = 0; i < flowCaps.length; ++i) {
+        for (uint256 i = 0; i < flowCaps.length; ++i) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
 
@@ -115,7 +117,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
     function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
-        for (uint i = 0; i < supplyCaps.length; ++i) {
+        for (uint256 i = 0; i < supplyCaps.length; ++i) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
         }
 
