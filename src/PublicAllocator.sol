@@ -25,10 +25,8 @@ import {FlowCap, FlowConfig, SupplyConfig, IPublicAllocatorStaticTyping, IPublic
 /// @custom:contact security@morpho.org
 /// @notice Publically callable allocator for a MetaMorpho vault.
 contract PublicAllocator is IPublicAllocatorStaticTyping {
-    using MorphoLib for IMorpho;
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
-    using SharesMathLib for uint256;
     using UtilsLib for uint256;
     using UtilsLib for uint128;
 
