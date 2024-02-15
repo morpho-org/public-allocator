@@ -64,6 +64,13 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(publicAllocator.owner(), address(OWNER));
     }
 
+    function testDeployAddressZeroFail() public {
+        vm.expectRevert(ErrorsLib.ZeroAddress.selector);
+        new PublicAllocator(address(0), address(vault));
+        vm.expectRevert(ErrorsLib.ZeroAddress.selector);
+        new PublicAllocator(OWNER, address(0));
+    }
+
     function testReallocateCapZeroOutflowByDefault(uint256 flow) public {
         flow = uint128(bound(flow, 1, CAP2));
         allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
