@@ -270,7 +270,7 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(address(this).balance - before, 0.01 ether + 0.005 ether, "wrong fee transferred");
     }
 
-    function testTransferFeeFailCannotReceive() public {
+    function testTransferFeeFail() public {
         vm.prank(OWNER);
         publicAllocator.setFee(0.001 ether);
 
@@ -281,6 +281,11 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.transferFee(payable(address(cr)));
     }
+
+    function testTransferOKOnZerobalance() public {
+         vm.prank(OWNER);
+         publicAllocator.transferFee(payable(address(this)));
+     }
 
     receive() external payable {}
 
