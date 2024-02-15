@@ -103,6 +103,71 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setSupplyCaps(supplyCaps);
     }
 
+    function testSetFee(uint fee) public {
+        vm.prank(OWNER);
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFee(fee);
+        publicAllocator.setFee(fee);
+        assertEq(publicAllocator.fee(),fee);
+    }
+
+    function testSetFlowCaps(uint128 in0, uint128 out0, uint128 in1, uint128 out1) public {
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(in0, out0)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(in1, out1)));
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFlowCaps(flowCaps);
+
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
+
+        FlowCap memory flowCap;
+        flowCap = publicAllocator.flowCap(idleParams.id());
+        assertEq(flowCap.maxIn,in0);
+        assertEq(flowCap.maxOut,out0);
+
+        flowCap = publicAllocator.flowCap(allMarkets[0].id());
+        assertEq(flowCap.maxIn,in1);
+        assertEq(flowCap.maxOut,out1);
+    }
+
+    function testSetSupplyCaps(uint cap0, uint cap1) public {
+        supplyCaps.push(SupplyConfig(idleParams.id(), cap0));
+        supplyCaps.push(SupplyConfig(allMarkets[0].id(), cap1));
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetSupplyCaps(supplyCaps);
+
+        vm.prank(OWNER);
+        publicAllocator.setSupplyCaps(supplyCaps);
+
+        uint cap;
+        cap = publicAllocator.supplyCap(idleParams.id());
+        assertEq(cap, cap0);
+
+        cap = publicAllocator.supplyCap(allMarkets[0].id());
+        assertEq(cap, cap1);
+    }
+
+    function testPublicReallocateEvent(uint128 flow, uint128 fee, address sender) public {
+        vm.deal(sender,fee);
+        flow = uint128(bound(flow, 1, CAP2));
+
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(0, flow)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(flow, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
+
+        allocations.push(MarketAllocation(idleParams, INITIAL_DEPOSIT - flow));
+        allocations.push(MarketAllocation(allMarkets[0], flow));
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.PublicReallocate(sender,fee);
+
+        vm.prank(sender);
+        publicAllocator.reallocate{value:fee}(allocations);
+    }
+
     function testReallocateNetting(uint128 flow) public {
         flow = uint128(bound(flow, 1, CAP2));
 
