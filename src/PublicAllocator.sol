@@ -94,7 +94,6 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     }
 
     // Set flow cap
-    // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
     function setFlow(FlowConfig calldata flowConfig) external onlyOwner {
         flowCaps[flowConfig.id] = flowConfig.caps;
     }
