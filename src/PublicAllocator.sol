@@ -36,7 +36,7 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     IMorpho public immutable MORPHO;
     mapping(Id => FlowCaps) public flowCaps;
     mapping(Id => uint256) public supplyCaps;
-    mapping(address => bool) public isAllocator;
+    mapping(address => bool) public isCurator;
 
     /// CONSTRUCTOR ///
 
@@ -48,11 +48,11 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
 
     /// MODIFIERS ///
 
-    /// @dev Reverts if the caller doesn't have the allocator role.
-    modifier onlyAllocatorRole() {
+    /// @dev Reverts if the caller doesn't have the curator role.
+    modifier onlyCuratorRole() {
         address sender = _msgSender();
-        if (!isAllocator[sender] && sender != owner()) {
-            revert ErrorsLib.NotAllocatorRole(sender);
+        if (!isCurator[sender] && sender != owner()) {
+            revert ErrorsLib.NotCuratorRole(sender);
         }
 
         _;
@@ -106,20 +106,20 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
         }
     }
 
-    function setIsAllocator(address allocator, bool _isAllocator) external onlyOwner {
-        isAllocator[allocator] = _isAllocator;
+    function setIsCurator(address curator, bool _isCurator) external onlyOwner {
+        isCurator[curator] = _isCurator;
     }
 
-    /// ALLOCATOR ROLE ONLY ///
+    /// CURATOR ROLE ONLY ///
 
     // Set flow cap
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
-    function setFlow(FlowConfig calldata flowConfig) external onlyAllocatorRole {
+    function setFlow(FlowConfig calldata flowConfig) external onlyCuratorRole {
         flowCaps[flowConfig.id] = flowConfig.caps;
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
-    function setCap(Id id, uint256 supplyCap) external onlyAllocatorRole {
+    function setCap(Id id, uint256 supplyCap) external onlyCuratorRole {
         supplyCaps[id] = supplyCap;
     }
 }

@@ -33,5 +33,5 @@ library ErrorsLib {
     error MaxUint128Exceeded();
 
     /// @notice Thrown when the caller doesn't have the allocator role.
-    error NotAllocatorRole(address sender);
+    error NotCuratorRole(address sender);
 }

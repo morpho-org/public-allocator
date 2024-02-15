@@ -21,6 +21,7 @@ contract CantReceive {
 contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
     MarketAllocation[] internal allocations;
+    address internal PUBLIC_ALLOCATOR_CURATOR = makeAddr("PublicAllocatorCurator");
 
     using MarketParamsLib for MarketParams;
     using MorphoBalancesLib for IMorpho;
@@ -45,6 +46,10 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setCap(idleParams.id(), type(uint256).max);
         vm.prank(OWNER);
         publicAllocator.setCap(allMarkets[0].id(), type(uint256).max);
+
+        // Set PublicAllocator's curator
+        vm.prank(OWNER);
+        publicAllocator.setIsCurator(PUBLIC_ALLOCATOR_CURATOR, true);
     }
 
     function testOwner() public {
@@ -71,23 +76,33 @@ contract PublicAllocatorTest is IntegrationTest {
     function testConfigureFlowAccess(address sender) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.NotAllocatorRole.selector, sender));
+        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.NotCuratorRole.selector, sender));
         publicAllocator.setFlow(FlowConfig(idleParams.id(), FlowCaps(0, 0)));
     }
 
-    function testSetIsAllocatorTrueAccess(address sender, address allocator) public {
+    function testSetIsCuratorTrueAccessFail(address sender, address curator) public {
         vm.assume(sender != OWNER);
-        vm.assume(!publicAllocator.isAllocator(allocator));
+        vm.assume(!publicAllocator.isCurator(curator));
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-        publicAllocator.setIsAllocator(allocator,true);
+        publicAllocator.setIsCurator(curator,true);
     }
 
-    function testSetIsAllocatorFalseAccess(address sender) public {
+    function testSetIsAllocatorFalseAccessFail(address sender) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, sender));
-        publicAllocator.setIsAllocator(ALLOCATOR,false);
+        publicAllocator.setIsCurator(PUBLIC_ALLOCATOR_CURATOR,false);
+    }
+
+    function testSetIsAllocatorAccessSuccess() public {
+        vm.prank(OWNER);
+        publicAllocator.setIsCurator(PUBLIC_ALLOCATOR_CURATOR,false);
+        assertEq(publicAllocator.isCurator(PUBLIC_ALLOCATOR_CURATOR),false);
+
+        vm.prank(OWNER);
+        publicAllocator.setIsCurator(PUBLIC_ALLOCATOR_CURATOR,true);
+        assertEq(publicAllocator.isCurator(PUBLIC_ALLOCATOR_CURATOR),true);
     }
 
     function testTransferFeeAccess(address sender, address payable recipient) public {
@@ -107,7 +122,7 @@ contract PublicAllocatorTest is IntegrationTest {
     function testSetCapAccess(address sender, Id id, uint256 cap) public {
         vm.assume(sender != OWNER);
         vm.prank(sender);
-        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.NotAllocatorRole.selector, sender));
+        vm.expectRevert(abi.encodeWithSelector(PAErrorsLib.NotCuratorRole.selector, sender));
         publicAllocator.setCap(id, cap);
     }
 
