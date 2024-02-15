@@ -17,11 +17,11 @@ import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.s
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
-import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {FlowCaps, FlowConfig, Withdrawal, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
+import {FlowCap, FlowConfig, SupplyConfig, Withdrawal, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
 
-contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTyping {
+contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
+    using MorphoLib for IMorpho;
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
     using SharesMathLib for uint256;
@@ -33,8 +33,8 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     uint256 fee;
     IMetaMorpho public immutable VAULT;
     IMorpho public immutable MORPHO;
-    mapping(Id => FlowCaps) public flowCaps;
-    mapping(Id => uint256) public supplyCaps;
+    mapping(Id => FlowCap) public flowCap;
+    mapping(Id => uint256) public supplyCap;
 
     /// CONSTRUCTOR ///
 
@@ -72,19 +72,19 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
 
             totalWithdrawn += withdrawnAssets;
             allocations[i].assets = assets - withdrawnAssets;
-            flowCaps[id].maxIn = (flowCaps[id].maxIn).saturatingAdd(withdrawnAssets);
-            flowCaps[id].maxOut -= withdrawnAssets;
+            flowCap[id].maxIn = (flowCap[id].maxIn).saturatingAdd(withdrawnAssets);
+            flowCap[id].maxOut -= withdrawnAssets;
         }
 
         VAULT.reallocate(allocations);
 
         Id depositMarketId = depositMarketParams.id();
         uint256 depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
-        if (depositAssets > supplyCaps[depositMarketId]) {
+        if (depositAssets > supplyCap[depositMarketId]) {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
         }
-        flowCaps[depositMarketId].maxIn -= totalWithdrawn;
-        flowCaps[depositMarketId].maxOut = (flowCaps[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
+        flowCap[depositMarketId].maxIn -= totalWithdrawn;
+        flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
     }
 
     /// OWNER ONLY ///
@@ -93,23 +93,24 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
         fee = _fee;
     }
 
-    function transferFee(address feeRecipient) external onlyOwner {
+    function transferFee(address payable feeRecipient) external onlyOwner {
         if (address(this).balance > 0) {
-            (bool success,) = feeRecipient.call{value: address(this).balance}("");
-            if (!success) {
-                revert ErrorsLib.FeeTransferFail();
-            }
+            feeRecipient.transfer(address(this).balance);
         }
     }
 
     // Set flow cap
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
-    function setFlow(FlowConfig calldata flowConfig) external onlyOwner {
-        flowCaps[flowConfig.id] = flowConfig.caps;
+    function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
+        for (uint i = 0; i < flowCaps.length; ++i) {
+            flowCap[flowCaps[i].id] = flowCaps[i].cap;
+        }
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
-    function setCap(Id id, uint256 supplyCap) external onlyOwner {
-        supplyCaps[id] = supplyCap;
+    function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
+        for (uint i = 0; i < supplyCaps.length; ++i) {
+            supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
+        }
     }
 }
