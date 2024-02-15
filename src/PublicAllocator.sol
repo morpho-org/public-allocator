@@ -54,6 +54,8 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
 
         uint256[] memory assets = new uint256[](allocations.length);
         for (uint256 i = 0; i < allocations.length; ++i) {
+            // Do not compute interest twice for every market
+            MORPHO.accrueInterest(allocations[i].marketParams);
             assets[i] = MORPHO.expectedSupplyAssets(allocations[i].marketParams, address(VAULT));
         }
 
