@@ -50,7 +50,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     /// PUBLIC ///
 
     function reallocate(MarketAllocation[] calldata allocations) external payable {
-        if (msg.value < fee) {
+        if (msg.value != fee) {
             revert ErrorsLib.FeeTooLow();
         }
 
