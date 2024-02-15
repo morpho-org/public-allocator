@@ -18,7 +18,13 @@ import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {FlowCap, FlowConfig, SupplyConfig, Withdrawal, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
+import {
+    FlowCap,
+    FlowConfig,
+    SupplyConfig,
+    Withdrawal,
+    IPublicAllocatorStaticTyping
+} from "./interfaces/IPublicAllocator.sol";
 
 contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
@@ -102,14 +108,14 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     // Set flow cap
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
-        for (uint i = 0; i < flowCaps.length; ++i) {
+        for (uint256 i = 0; i < flowCaps.length; ++i) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
     function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
-        for (uint i = 0; i < supplyCaps.length; ++i) {
+        for (uint256 i = 0; i < supplyCaps.length; ++i) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
         }
     }

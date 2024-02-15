@@ -22,7 +22,7 @@ struct FlowConfig {
 
 struct SupplyConfig {
     Id id;
-    uint cap;
+    uint256 cap;
 }
 
 struct Withdrawal {
