@@ -17,11 +17,10 @@ import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.s
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {Ownable2Step, Ownable} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
-import {Multicall} from "../lib/metamorpho/lib/openzeppelin-contracts/contracts/utils/Multicall.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {FlowCaps, FlowConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
+import {FlowCap, FlowConfig, SupplyConfig, IPublicAllocatorStaticTyping} from "./interfaces/IPublicAllocator.sol";
 
-contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTyping {
+contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     using MorphoLib for IMorpho;
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
@@ -34,8 +33,8 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
     uint256 fee;
     IMetaMorpho public immutable VAULT;
     IMorpho public immutable MORPHO;
-    mapping(Id => FlowCaps) public flowCaps;
-    mapping(Id => uint256) public supplyCaps;
+    mapping(Id => FlowCap) public flowCap;
+    mapping(Id => uint256) public supplyCap;
     mapping(address => bool) public isCurator;
 
     /// CONSTRUCTOR ///
@@ -80,16 +79,16 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
             market = MORPHO.market(id);
             uint256 newAssets = MORPHO.expectedSupplyAssets(marketParams, address(VAULT));
             if (newAssets >= assets[i]) {
-                if (newAssets > supplyCaps[id]) {
+                if (newAssets > supplyCap[id]) {
                     revert ErrorsLib.PublicAllocatorSupplyCapExceeded(id);
                 }
                 uint128 inflow = (newAssets - assets[i]).toUint128();
-                flowCaps[id].maxIn -= inflow;
-                flowCaps[id].maxOut = (flowCaps[id].maxOut).saturatingAdd(inflow);
+                flowCap[id].maxIn -= inflow;
+                flowCap[id].maxOut = (flowCap[id].maxOut).saturatingAdd(inflow);
             } else {
                 uint128 outflow = (assets[i] - newAssets).toUint128();
-                flowCaps[id].maxIn = (flowCaps[id].maxIn).saturatingAdd(outflow);
-                flowCaps[id].maxOut -= outflow;
+                flowCap[id].maxIn = (flowCap[id].maxIn).saturatingAdd(outflow);
+                flowCap[id].maxOut -= outflow;
             }
         }
     }
@@ -114,12 +113,16 @@ contract PublicAllocator is Ownable2Step, Multicall, IPublicAllocatorStaticTypin
 
     // Set flow cap
     // Flows are rounded up from shares at every reallocation, so small errors may accumulate.
-    function setFlow(FlowConfig calldata flowConfig) external onlyCuratorRole {
-        flowCaps[flowConfig.id] = flowConfig.caps;
+    function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyCuratorRole {
+        for (uint i = 0; i < flowCaps.length; ++i) {
+            flowCap[flowCaps[i].id] = flowCaps[i].cap;
+        }
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
-    function setCap(Id id, uint256 supplyCap) external onlyCuratorRole {
-        supplyCaps[id] = supplyCap;
+    function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyCuratorRole {
+        for (uint i = 0; i < supplyCaps.length; ++i) {
+            supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
+        }
     }
 }
