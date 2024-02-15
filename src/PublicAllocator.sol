@@ -88,6 +88,9 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     /// OWNER ONLY ///
 
     function setFee(uint256 _fee) external onlyOwner {
+        if (fee == _fee) {
+            revert ErrorsLib.AlreadySet();
+        }
         fee = _fee;
         emit EventsLib.SetFee(_fee);
     }

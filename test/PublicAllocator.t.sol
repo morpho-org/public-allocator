@@ -105,11 +105,21 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testSetFee(uint fee) public {
+        vm.assume(fee != publicAllocator.fee());
         vm.prank(OWNER);
         vm.expectEmit(address(publicAllocator));
         emit EventsLib.SetFee(fee);
         publicAllocator.setFee(fee);
         assertEq(publicAllocator.fee(),fee);
+    }
+
+    function testSetFeeAlreadySet(uint fee) public {
+        vm.assume(fee != publicAllocator.fee());
+        vm.prank(OWNER);
+        publicAllocator.setFee(fee);
+        vm.prank(OWNER);
+        vm.expectRevert(ErrorsLib.AlreadySet.selector);
+        publicAllocator.setFee(fee);
     }
 
     function testSetFlowCaps(uint128 in0, uint128 out0, uint128 in1, uint128 out1) public {
@@ -213,6 +223,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testFeeAmountSuccess(uint256 requiredFee, uint256 givenFee) public {
+        vm.assume(requiredFee != publicAllocator.fee());
         vm.prank(OWNER);
         publicAllocator.setFee(requiredFee);
 
