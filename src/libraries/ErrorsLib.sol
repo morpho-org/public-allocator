@@ -34,4 +34,7 @@ library ErrorsLib {
 
     /// @notice Thrown when the caller doesn't have the allocator role.
     error NotCuratorRole(address sender);
+
+    /// @notice Thrown when the value is already set.
+    error AlreadySet();
 }
