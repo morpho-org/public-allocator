@@ -106,6 +106,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     }
 
     // Set flow cap
+    // Doesn't revert if it doesn't change the storage at all
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
         for (uint256 i = 0; i < flowCaps.length; ++i) {
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
@@ -115,6 +116,7 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
     }
 
     // Set supply cap. Public reallocation will not be able to increase supply if it ends above its cap.
+    // Doesn't revert if it doesn't change the storage at all
     function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
         for (uint256 i = 0; i < supplyCaps.length; ++i) {
             supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
