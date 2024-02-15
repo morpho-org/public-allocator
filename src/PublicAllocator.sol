@@ -118,12 +118,12 @@ contract PublicAllocator is Ownable2Step, IPublicAllocatorStaticTyping {
         }
     }
 
-    function setIsCurator(address curator, bool _isCurator) external onlyOwner {
-        if (isCurator[curator] == _isCurator) {
+    function setIsCurator(address account, bool accountIsCurator) external onlyOwner {
+        if (isCurator[account] == accountIsCurator) {
             revert ErrorsLib.AlreadySet();
         }
-        isCurator[curator] = _isCurator;
-        emit EventsLib.SetIsCurator(curator, _isCurator);
+        isCurator[account] = accountIsCurator;
+        emit EventsLib.SetIsCurator(account, accountIsCurator);
     }
 
     /// CURATOR ROLE ONLY ///

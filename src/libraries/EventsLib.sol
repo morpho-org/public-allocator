@@ -21,5 +21,5 @@ library EventsLib {
     event SetSupplyCaps(SupplyConfig[] supplyCaps);
 
     /// @notice Emitted when the owner changes a curator status
-    event SetIsCurator(address account, bool isCurator);
+    event SetIsCurator(address account, bool accountIsCurator);
 }

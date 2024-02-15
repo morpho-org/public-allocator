@@ -34,7 +34,7 @@ interface IPublicAllocatorBase {
     function transferFee(address payable feeRecipient) external;
     function setFlowCaps(FlowConfig[] calldata _flowCaps) external;
     function setSupplyCaps(SupplyConfig[] calldata _supplyCaps) external;
-    function setIsCurator(address curator, bool _isCurator) external;
+    function setIsCurator(address account, bool accountIsCurator) external;
 }
 
 /// @dev This interface is inherited by PublicAllocator so that function signatures are checked by the compiler.
