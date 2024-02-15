@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.24;
 
+import "forge-std/console2.sol";
 import {
     Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
 } from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
@@ -72,8 +73,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         if (msg.value != fee) revert ErrorsLib.IncorrectFee(msg.value);
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
-        allocations[withdrawals.length].marketParams = depositMarketParams;
-        allocations[withdrawals.length].assets = type(uint256).max;
 
         uint128 totalWithdrawn;
 
@@ -94,13 +93,30 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
 
+        Id depositMarketId = depositMarketParams.id();
+
+        MORPHO.accrueInterest(depositMarketParams);
+        uint totalSupplyAssetsBefore = MORPHO.totalSupplyAssets(depositMarketId);
+
+        allocations[withdrawals.length].marketParams = depositMarketParams;
+        allocations[withdrawals.length].assets = type(uint).max;
+
         VAULT.reallocate(allocations);
 
-        Id depositMarketId = depositMarketParams.id();
-        uint256 depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
-        if (depositAssets > supplyCap[depositMarketId]) revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+        Market memory depositMarket = MORPHO.market(depositMarketId);
+
+        // Protect against duplicates with nonzero amounts in withdrawals
+        if (depositMarket.totalSupplyAssets - totalSupplyAssetsBefore != totalWithdrawn) {
+            revert ErrorsLib.InconsistentWithdrawTo(withdrawals,depositMarketParams);
+        }
+
+        uint256 vaultSupplyInMarket = MORPHO.supplyShares(depositMarketId,address(VAULT)).toAssetsDown(depositMarket.totalSupplyAssets,depositMarket.totalSupplyShares);
+
+        if (vaultSupplyInMarket > supplyCap[depositMarketId]) revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
         flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
+
         emit EventsLib.PublicReallocateTo(msg.sender, fee, depositMarketId, totalWithdrawn);
     }
 
