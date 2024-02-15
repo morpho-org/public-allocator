@@ -327,9 +327,7 @@ contract PublicAllocatorTest is IntegrationTest {
         // Should not work above cap
         withdrawals.push(Withdrawal(idleParams, uint128(flow - cap)));
 
-        vm.expectRevert(
-            abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
-        );
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id()));
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
 
@@ -355,9 +353,7 @@ contract PublicAllocatorTest is IntegrationTest {
         // Increase supply even more (by 1)
         withdrawals[0].amount = 1;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id())
-        );
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id()));
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
 
