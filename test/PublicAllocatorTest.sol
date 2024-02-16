@@ -28,12 +28,34 @@ contract CantReceive {
     }
 }
 
+// Withdrawal sorting snippet
+library SortWithdrawals {
+    using MarketParamsLib for MarketParams;
+    // Sorts withdrawals in-place using gnome sort. 
+    // Does not detect duplicates.
+    // The sort will not be in-place if you pass a storage array.
+    function sort(Withdrawal[] memory ws) pure internal returns (Withdrawal[] memory) {
+    uint256 i;
+        while (i < ws.length) {
+            if (i == 0 || Id.unwrap(ws[i].marketParams.id()) >= Id.unwrap(ws[i-1].marketParams.id())) {
+                i++;
+            } else {
+                (ws[i], ws[i - 1]) = (ws[i - 1], ws[i]);
+                i--;
+            }
+        }
+        return ws;
+    }
+}
+
+
 contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
     Withdrawal[] internal withdrawals;
     FlowConfig[] internal flowCaps;
     SupplyConfig[] internal supplyCaps;
 
+    using SortWithdrawals for Withdrawal[];
     using MarketParamsLib for MarketParams;
     using MorphoBalancesLib for IMorpho;
 
@@ -205,6 +227,10 @@ contract PublicAllocatorTest is IntegrationTest {
 
         withdrawals.push(Withdrawal(idleParams, flow));
         withdrawals.push(Withdrawal(allMarkets[1], flow));
+
+        Withdrawal[] memory sortedWithdrawals = withdrawals.sort();
+        withdrawals[0] = sortedWithdrawals[0];
+        withdrawals[1] = sortedWithdrawals[1];
 
         vm.expectEmit(address(publicAllocator));
         emit EventsLib.PublicWithdrawal(idleParams.id(), flow);
@@ -484,4 +510,33 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
     }
+
+    function testReallocateToNotSorted() public {
+        // Prepare public reallocation from 2 markets to 1
+        _setCap(allMarkets[1], CAP2);
+
+        MarketAllocation[] memory allocations = new MarketAllocation[](3);
+        allocations[0] = MarketAllocation(idleParams, INITIAL_DEPOSIT - 2e18);
+        allocations[1] = MarketAllocation(allMarkets[0], 1e18);
+        allocations[2] = MarketAllocation(allMarkets[1], 1e18);
+        vm.prank(OWNER);
+        vault.reallocate(allocations);
+
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
+        flowCaps.push(FlowConfig(allMarkets[1].id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
+
+        withdrawals.push(Withdrawal(allMarkets[0],1e18));
+        withdrawals.push(Withdrawal(allMarkets[1],1e18));
+        Withdrawal[] memory sortedWithdrawals = withdrawals.sort();
+        // Created non-sorted withdrawals list
+        withdrawals[0] = sortedWithdrawals[1];
+        withdrawals[1] = sortedWithdrawals[0];
+
+        publicAllocator.reallocateTo(withdrawals, idleParams);
+
+    }
+
 }

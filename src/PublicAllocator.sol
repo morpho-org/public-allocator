@@ -87,11 +87,11 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         uint128 totalWithdrawn;
 
         Id id;
-        Id oldId;
+        Id prevId;
         for (uint256 i = 0; i < withdrawals.length; i++) {
-            oldId = id;
+            prevId = id;
             id = withdrawals[i].marketParams.id();
-            if (Id.unwrap(id) <= Id.unwrap(oldId)) revert ErrorsLib.InconsistentWithdrawals();
+            if (Id.unwrap(id) <= Id.unwrap(prevId)) revert ErrorsLib.InconsistentWithdrawals();
             if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.DepositMarketInWithdrawals();
 
             MORPHO.accrueInterest(withdrawals[i].marketParams);

@@ -64,6 +64,7 @@ interface IPublicAllocatorBase {
     /// @param supplyMarketParams The market receiving total withdrawn to.
     /// @dev Will call MetaMorpho's `reallocate`.
     /// @dev Checks that the public allocator constraints (flows, caps) are respected.
+    /// @dev Will revert when `withdrawals` contains a duplicate or is not sorted.
     /// @dev Will revert if a withdrawal amount is larger than available liquidity.
     function reallocateTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
         external
