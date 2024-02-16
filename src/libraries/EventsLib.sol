@@ -25,4 +25,14 @@ library EventsLib {
 
     /// @notice Emitted when the owner updates some supply caps.
     event SetSupplyCaps(SupplyConfig[] supplyCaps);
+
+    /// @notice Emitted when a new PublicAllocator is created.
+    /// @param publicAllocator The address of the created PublicAllocator.
+    /// @param caller The caller of the function.
+    /// @param initialOwner The initial owner of the PublicAllocator.
+    /// @param vault The MetaMorpho vault attached to the PublicAllocator.
+    /// @param salt The salt used for the PublicAllocator's CREATE2 address.
+    event CreatePublicAllocator(
+        address indexed publicAllocator, address indexed caller, address initialOwner, address vault, bytes32 salt
+    );
 }
