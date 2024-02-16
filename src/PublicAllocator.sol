@@ -11,7 +11,8 @@ import {MorphoLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphe
 import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/SharesMathLib.sol";
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
 
-import {UtilsLib} from "./libraries/UtilsLib.sol";
+import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
+
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
 import {
@@ -19,6 +20,7 @@ import {
     FlowConfig,
     SupplyConfig,
     Withdrawal,
+    MAX_SETTABLE_FLOW_CAP,
     IPublicAllocatorStaticTyping,
     IPublicAllocatorBase
 } from "./interfaces/IPublicAllocator.sol";
@@ -33,7 +35,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MarketParamsLib for MarketParams;
     using SharesMathLib for uint256;
     using UtilsLib for uint256;
-    using UtilsLib for uint128;
 
     /// CONSTANTS ///
 
@@ -110,7 +111,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
             totalWithdrawn += withdrawnAssets;
             allocations[i].assets = assets - withdrawnAssets;
-            flowCap[id].maxIn = (flowCap[id].maxIn).saturatingAdd(withdrawnAssets);
+            flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
@@ -118,12 +119,12 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         allocations[withdrawals.length].marketParams = depositMarketParams;
         allocations[withdrawals.length].assets = type(uint256).max;
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
-        flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
+        flowCap[depositMarketId].maxOut += totalWithdrawn;
 
         VAULT.reallocate(allocations);
 
         if (MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT)) > supplyCap[depositMarketId]) {
-            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketParams.id());
+            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
         }
 
         emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
@@ -148,6 +149,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
         for (uint256 i = 0; i < flowCaps.length; i++) {
+            if (flowCaps[i].cap.maxIn > MAX_SETTABLE_FLOW_CAP || flowCaps[i].cap.maxOut > MAX_SETTABLE_FLOW_CAP) {
+                revert ErrorsLib.MaxSettableFlowCapExceeded();
+            }
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
 

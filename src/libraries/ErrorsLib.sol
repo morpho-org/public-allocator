@@ -42,6 +42,9 @@ library ErrorsLib {
     /// @notice Thrown when there are duplicates with nonzero assets in `withdrawTo` arguments.
     error InconsistentWithdrawTo();
 
+    /// @notice Thrown when attempting to set max inflow/outflow above the MAX_SETTABLE_FLOW_CAP.
+    error MaxSettableFlowCapExceeded();
+
     /// @notice Thrown when the PublicAllocatorFactory is called with a vault not made by the MetaMorphoFactory.
     error NotMetaMorpho();
 }
