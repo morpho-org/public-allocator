@@ -11,13 +11,11 @@ import {ErrorsLib} from "../libraries/ErrorsLib.sol";
 library UtilsLib {
     /// @dev Returns `x` safely cast to uint128.
     function toUint128(uint256 x) internal pure returns (uint128) {
-        if (x > type(uint128).max) {
-            revert ErrorsLib.MaxUint128Exceeded();
-        }
+        if (x > type(uint128).max) revert ErrorsLib.MaxUint128Exceeded();
         return uint128(x);
     }
 
-    // Returns min(x+y,type(uint128).max)
+    /// @dev Returns min(x+y,type(uint128).max).
     function saturatingAdd(uint128 x, uint128 y) internal pure returns (uint128 z) {
         assembly ("memory-safe") {
             let sum := add(x, y)

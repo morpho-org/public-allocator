@@ -180,8 +180,7 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(cap, cap1);
     }
 
-    function testPublicReallocateEvent(uint128 flow, uint128 fee, address sender) public {
-        vm.deal(sender, fee);
+    function testPublicReallocateEvent(uint128 flow, address sender) public {
         flow = uint128(bound(flow, 1, CAP2 / 2));
 
         // Prepare public reallocation from 2 markets to 1
@@ -199,21 +198,16 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
 
-        if (fee != publicAllocator.fee()) {
-            vm.prank(OWNER);
-            publicAllocator.setFee(fee);
-        }
-
         withdrawals.push(Withdrawal(idleParams, flow));
         withdrawals.push(Withdrawal(allMarkets[1], flow));
 
         vm.expectEmit(address(publicAllocator));
         emit EventsLib.PublicWithdrawal(idleParams.id(), flow);
         emit EventsLib.PublicWithdrawal(allMarkets[1].id(), flow);
-        emit EventsLib.PublicReallocateTo(sender, fee, allMarkets[0].id(), 2 * flow);
+        emit EventsLib.PublicReallocateTo(sender, allMarkets[0].id(), 2 * flow);
 
         vm.prank(sender);
-        publicAllocator.withdrawTo{value: fee}(withdrawals, allMarkets[0]);
+        publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
 
     function testReallocateNetting(uint128 flow) public {
@@ -273,7 +267,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFee(requiredFee);
 
         vm.deal(address(this), givenFee);
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.IncorrectFee.selector,givenFee));
+        vm.expectRevert(ErrorsLib.IncorrectFee.selector);
 
         publicAllocator.withdrawTo{value: givenFee}(withdrawals, allMarkets[0]);
     }

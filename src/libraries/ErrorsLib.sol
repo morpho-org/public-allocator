@@ -24,7 +24,7 @@ library ErrorsLib {
     error InconsistentFlowConfig(Id id);
 
     /// @notice Thrown when the reallocation fee given is wrong
-    error IncorrectFee(uint givenFee);
+    error IncorrectFee();
 
     /// @notice Thrown when the fee recipient fails to receive the fee
     error FeeTransferFail();
