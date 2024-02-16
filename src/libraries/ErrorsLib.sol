@@ -25,7 +25,7 @@ library ErrorsLib {
     error InconsistentFlowConfig(Id id);
 
     /// @notice Thrown when the reallocation fee given is wrong
-    error IncorrectFee(uint givenFee);
+    error IncorrectFee();
 
     /// @notice Thrown when the fee recipient fails to receive the fee
     error FeeTransferFail();
@@ -41,4 +41,7 @@ library ErrorsLib {
 
     /// @notice Thrown when there are duplicates with nonzero assets in `withdrawTo` arguments.
     error InconsistentWithdrawTo(Withdrawal[] withdrawals, MarketParams depositMarketParams);
+
+    /// @notice Thrown when the PublicAllocatorFactory is called with a vault not made by the MetaMorphoFactory.
+    error NotMetaMorpho();
 }
