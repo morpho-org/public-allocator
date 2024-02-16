@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.21;
 
-import {IMetaMorpho, IMorpho, MarketAllocation, Id, MarketParams} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {
+    IMetaMorpho,
+    IMorpho,
+    MarketAllocation,
+    Id,
+    MarketParams
+} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 struct FlowCap {
     /// @notice The maximum allowed inflow in a market
@@ -21,7 +27,9 @@ struct SupplyConfig {
 }
 
 struct Withdrawal {
+    /// @notice The market from which to withdraw.
     MarketParams marketParams;
+    /// @notice The amount to withdraw.
     uint128 amount;
 }
 
@@ -36,7 +44,7 @@ interface IPublicAllocatorBase {
 
     /// @notice The address of the Morpho contract.
     function MORPHO() external view returns (IMorpho);
-    
+
     /// @notice The current fee.
     function fee() external view returns (uint256);
 
@@ -44,6 +52,11 @@ interface IPublicAllocatorBase {
     /// @notice A withdraw through public allocation can start and end above the cap.
     function supplyCap(Id) external view returns (uint256);
 
+    /// @notice Reallocate from a list of markets to one market.
+    /// @param withdrawals The markets to withdraw from,and the amounts to withdraw.
+    /// @param depositMarketParams The market receiving total withdrawn to.
+    /// @dev Will call MetaMorpho's `reallocate`.
+    /// @dev Checks that the public allocator constraints are respected.
     function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
         external
         payable;

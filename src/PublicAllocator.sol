@@ -80,6 +80,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// PUBLIC ///
 
+    /// @inheritdoc IPublicAllocatorBase
     function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
         external
         payable
@@ -113,7 +114,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
         Id depositMarketId = depositMarketParams.id();
         uint256 depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
-        if (depositAssets > supplyCap[depositMarketId]) revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+        if (depositAssets > supplyCap[depositMarketId]) {
+            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+        }
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
         flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
         emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
