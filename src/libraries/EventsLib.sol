@@ -12,7 +12,7 @@ library EventsLib {
     event PublicWithdrawal(Id id, uint256 withdrawnAssets);
 
     /// @notice Emitted at the end of a public reallocation.
-    event PublicReallocateTo(address sender, Id depositMarketId, uint256 depositedAssets);
+    event PublicReallocateTo(address sender, Id supplyMarketId, uint256 suppliedAssets);
 
     /// @notice Emitted when the owner changes the `fee`
     event SetFee(uint256 fee);

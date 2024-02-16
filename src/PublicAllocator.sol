@@ -2,19 +2,6 @@
 pragma solidity 0.8.24;
 
 import {
-    Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
-} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
-
-import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
-import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
-
-import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
-
-import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
-
-import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {EventsLib} from "./libraries/EventsLib.sol";
-import {
     FlowCap,
     FlowConfig,
     SupplyConfig,
@@ -23,6 +10,16 @@ import {
     IPublicAllocatorStaticTyping,
     IPublicAllocatorBase
 } from "./interfaces/IPublicAllocator.sol";
+import {
+    Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
+} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
+
+import {ErrorsLib} from "./libraries/ErrorsLib.sol";
+import {EventsLib} from "./libraries/EventsLib.sol";
+import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
+import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
+import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
 /// @title MetaMorpho
 /// @author Morpho Labs
@@ -33,7 +30,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MarketParamsLib for MarketParams;
     using UtilsLib for uint256;
 
-    /// CONSTANTS ///
+    /* CONSTANTS */
 
     /// @inheritdoc IPublicAllocatorBase
     address public immutable OWNER;
@@ -44,7 +41,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     IMetaMorpho public immutable VAULT;
 
-    /// STORAGE ///
+    /* STORAGE */
 
     /// @inheritdoc IPublicAllocatorBase
     uint256 public fee;
@@ -55,7 +52,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     mapping(Id => uint256) public supplyCap;
 
-    /// MODIFIER ///
+    /* MODIFIER */
 
     /// @dev Reverts if the caller is not the owner.
     modifier onlyOwner() {
@@ -63,7 +60,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         _;
     }
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev Initializes the contract.
     /// @param newOwner The owner of the contract.
@@ -76,17 +73,17 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         MORPHO = VAULT.MORPHO();
     }
 
-    /// PUBLIC ///
+    /* PUBLIC */
 
     /// @inheritdoc IPublicAllocatorBase
-    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
+    function reallocateTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
         external
         payable
     {
         if (msg.value != fee) revert ErrorsLib.IncorrectFee();
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
-        Id depositMarketId = depositMarketParams.id();
+        Id supplyMarketId = supplyMarketParams.id();
         uint128 totalWithdrawn;
 
         Id id;
@@ -95,43 +92,42 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             oldId = id;
             id = withdrawals[i].marketParams.id();
             if (Id.unwrap(id) <= Id.unwrap(oldId)) revert ErrorsLib.InconsistentWithdrawals();
-            if (Id.unwrap(id) == Id.unwrap(depositMarketId)) revert ErrorsLib.DepositMarketInWithdrawals();
-
-            uint128 withdrawnAssets = withdrawals[i].amount;
-            totalWithdrawn += withdrawnAssets;
+            if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.DepositMarketInWithdrawals();
 
             MORPHO.accrueInterest(withdrawals[i].marketParams);
             uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
 
-            allocations[i].marketParams = withdrawals[i].marketParams;
-            allocations[i].assets = assets - withdrawnAssets;
+            uint128 withdrawnAssets = withdrawals[i].amount;
+            totalWithdrawn += withdrawnAssets;
             flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
+            allocations[i].assets = assets - withdrawnAssets;
+            allocations[i].marketParams = withdrawals[i].marketParams;
 
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
 
-        allocations[withdrawals.length].marketParams = depositMarketParams;
+        allocations[withdrawals.length].marketParams = supplyMarketParams;
         allocations[withdrawals.length].assets = type(uint256).max;
-        flowCap[depositMarketId].maxIn -= totalWithdrawn;
-        flowCap[depositMarketId].maxOut += totalWithdrawn;
+        flowCap[supplyMarketId].maxIn -= totalWithdrawn;
+        flowCap[supplyMarketId].maxOut += totalWithdrawn;
 
         VAULT.reallocate(allocations);
 
-        if (MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT)) > supplyCap[depositMarketId]) {
-            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+        if (MORPHO.expectedSupplyAssets(supplyMarketParams, address(VAULT)) > supplyCap[supplyMarketId]) {
+            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(supplyMarketId);
         }
 
-        emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
+        emit EventsLib.PublicReallocateTo(msg.sender, supplyMarketId, totalWithdrawn);
     }
 
-    /// OWNER ONLY ///
+    /* OWNER ONLY */
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFee(uint256 _fee) external onlyOwner {
-        if (fee == _fee) revert ErrorsLib.AlreadySet();
-        fee = _fee;
-        emit EventsLib.SetFee(_fee);
+    function setFee(uint256 newFee) external onlyOwner {
+        if (fee == newFee) revert ErrorsLib.AlreadySet();
+        fee = newFee;
+        emit EventsLib.SetFee(newFee);
     }
 
     /// @inheritdoc IPublicAllocatorBase
