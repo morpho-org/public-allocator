@@ -15,10 +15,10 @@ library ErrorsLib {
     /// @notice Thrown when the address passed is the zero address.
     error ZeroAddress();
 
-    /// @notice Thrown when allocation to market `id` exceeds current max inflow.
+    /// @notice Thrown when the allocation to market `id` exceeds current max inflow.
     error InflowCapExceeded(Id id);
 
-    /// @notice Thrown when allocation from market `id` exceeds current max outflow.
+    /// @notice Thrown when the allocation from market `id` exceeds current max outflow.
     error OutflowCapExceeded(Id id);
 
     /// @notice Thrown when flow configuration for market `id` has min flow > max flow.
