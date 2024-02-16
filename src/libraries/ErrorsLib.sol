@@ -15,20 +15,17 @@ library ErrorsLib {
     /// @notice Thrown when the address passed is the zero address.
     error ZeroAddress();
 
-    /// @notice Thrown when allocation to market `id` exceeds current max inflow
+    /// @notice Thrown when allocation to market `id` exceeds current max inflow.
     error InflowCapExceeded(Id id);
 
-    /// @notice Thrown when allocation from market `id` exceeds current max outflow
+    /// @notice Thrown when allocation from market `id` exceeds current max outflow.
     error OutflowCapExceeded(Id id);
 
-    /// @notice Thrown when flow configuration for market `id` has min flow > max flow
+    /// @notice Thrown when flow configuration for market `id` has min flow > max flow.
     error InconsistentFlowConfig(Id id);
 
-    /// @notice Thrown when the reallocation fee given is wrong
+    /// @notice Thrown when the reallocation fee given is wrong.
     error IncorrectFee();
-
-    /// @notice Thrown when the fee recipient fails to receive the fee
-    error FeeTransferFail();
 
     /// @notice Thrown when the supply cap has been exceeded on market `id` during a reallocation of funds.
     error PublicAllocatorSupplyCapExceeded(Id id);
