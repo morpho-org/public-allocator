@@ -92,18 +92,14 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         uint128 totalWithdrawn;
 
         for (uint256 i = 0; i < withdrawals.length; i++) {
-            allocations[i].marketParams = withdrawals[i].marketParams;
             Id id = withdrawals[i].marketParams.id();
             MORPHO.accrueInterest(withdrawals[i].marketParams);
-            uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
             uint128 withdrawnAssets = withdrawals[i].amount;
-            // Clamp at 0 if withdrawnAssets is too big
-            if (withdrawnAssets > assets) {
-                withdrawnAssets = assets.toUint128();
-            }
-
             totalWithdrawn += withdrawnAssets;
-            allocations[i].assets = assets - withdrawnAssets;
+
+            allocations[i].marketParams = withdrawals[i].marketParams;
+            allocations[i].assets =
+                MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT)) - withdrawnAssets;
             flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
