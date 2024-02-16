@@ -433,7 +433,6 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testDuplicateInWithdrawals() public {
-
         // Set flow limits
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(type(uint128).max, type(uint128).max)));
         flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(type(uint128).max, 0)));
@@ -444,7 +443,7 @@ contract PublicAllocatorTest is IntegrationTest {
         // _setCap(allMarkets[1], CAP2);
         withdrawals.push(Withdrawal(idleParams, 1e18));
         withdrawals.push(Withdrawal(idleParams, 1e18));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.InconsistentWithdrawTo.selector,withdrawals,allMarkets[0]));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.InconsistentWithdrawTo.selector, withdrawals, allMarkets[0]));
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
 
@@ -456,7 +455,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlowCaps(flowCaps);
 
         withdrawals.push(Withdrawal(idleParams, 1e18));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.InconsistentWithdrawTo.selector,withdrawals,idleParams));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.InconsistentWithdrawTo.selector, withdrawals, idleParams));
         publicAllocator.withdrawTo(withdrawals, idleParams);
     }
 }
