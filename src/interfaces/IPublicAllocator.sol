@@ -9,6 +9,10 @@ import {
     MarketParams
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
+/// @dev Equal to type(uint128).max/2, so flow caps can always be stored on 128 bits
+/// @dev The actual max possible flow cap is type(uint128).max-1.
+uint128 constant MAX_SETTABLE_FLOW_CAP = 0x7fffffffffffffffffffffffffffffff;
+
 struct FlowCap {
     /// @notice The maximum allowed inflow in a market
     uint128 maxIn;
@@ -72,6 +76,7 @@ interface IPublicAllocatorBase {
     function setFlowCaps(FlowConfig[] calldata _flowCaps) external;
 
     /// @notice Sets the supply cap of a supply through public allocation for some markets.
+    /// @dev Max allowed inflow/outflow is MAX_SETTABLE_SUPPLY_CAP.
     /// @dev Doesn't revert if it doesn't change the storage at all.
     function setSupplyCaps(SupplyConfig[] calldata _supplyCaps) external;
 }

@@ -38,6 +38,9 @@ library ErrorsLib {
     /// @notice Thrown when the value is already set.
     error AlreadySet();
 
+    /// @notice Thrown when attempting to set max inflow/outflow above the MAX_SETTABLE_FLOW_CAP.
+    error MaxSettableFlowCapExceeded();
+
     /// @notice Thrown when the PublicAllocatorFactory is called with a vault not made by the MetaMorphoFactory.
     error NotMetaMorpho();
 }
