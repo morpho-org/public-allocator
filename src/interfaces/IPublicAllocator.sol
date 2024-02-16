@@ -65,7 +65,7 @@ interface IPublicAllocatorBase {
     /// @dev Will call MetaMorpho's `reallocate`.
     /// @dev Checks that the public allocator constraints (flows, caps) are respected.
     /// @dev Will revert if a withdrawal amount is larger than available liquidity.
-    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
+    function reallocateTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
         external
         payable;
 

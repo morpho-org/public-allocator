@@ -76,7 +76,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /* PUBLIC */
 
     /// @inheritdoc IPublicAllocatorBase
-    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
+    function reallocateTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
         external
         payable
     {
