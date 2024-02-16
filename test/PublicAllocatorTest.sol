@@ -452,7 +452,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
 
-    function testSameInWithdrawalAndDeposit() public {
+    function testSupplyMarketInWithdrawals() public {
         // Set flow limits
         flowCaps.push(FlowConfig(idleParams.id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
         flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(MAX_SETTABLE_FLOW_CAP, 0)));

@@ -76,26 +76,26 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /* PUBLIC */
 
     /// @inheritdoc IPublicAllocatorBase
-    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
+    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
         external
         payable
     {
         if (msg.value != fee) revert ErrorsLib.IncorrectFee();
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
-        Id depositMarketId = depositMarketParams.id();
+        Id supplyMarketId = supplyMarketParams.id();
         uint128 totalWithdrawn;
 
         for (uint256 i = 0; i < withdrawals.length; i++) {
             Id id = withdrawals[i].marketParams.id();
 
-            // Revert if the market is elsewhere in the list, or is the deposit market.
+            // Revert if the market is elsewhere in the list, or is the supply market.
             for (uint256 j = i + 1; j < withdrawals.length; j++) {
                 if (Id.unwrap(id) == Id.unwrap(withdrawals[j].marketParams.id())) {
                     revert ErrorsLib.InconsistentWithdrawTo();
                 }
             }
-            if (Id.unwrap(id) == Id.unwrap(depositMarketId)) revert ErrorsLib.InconsistentWithdrawTo();
+            if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.InconsistentWithdrawTo();
 
             uint128 withdrawnAssets = withdrawals[i].amount;
             totalWithdrawn += withdrawnAssets;
@@ -111,18 +111,18 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
 
-        allocations[withdrawals.length].marketParams = depositMarketParams;
+        allocations[withdrawals.length].marketParams = supplyMarketParams;
         allocations[withdrawals.length].assets = type(uint256).max;
-        flowCap[depositMarketId].maxIn -= totalWithdrawn;
-        flowCap[depositMarketId].maxOut += totalWithdrawn;
+        flowCap[supplyMarketId].maxIn -= totalWithdrawn;
+        flowCap[supplyMarketId].maxOut += totalWithdrawn;
 
         VAULT.reallocate(allocations);
 
-        if (MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT)) > supplyCap[depositMarketId]) {
-            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+        if (MORPHO.expectedSupplyAssets(supplyMarketParams, address(VAULT)) > supplyCap[supplyMarketId]) {
+            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(supplyMarketId);
         }
 
-        emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
+        emit EventsLib.PublicReallocateTo(msg.sender, supplyMarketId, totalWithdrawn);
     }
 
     /* OWNER ONLY */
