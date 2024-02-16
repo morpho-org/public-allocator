@@ -10,7 +10,7 @@ import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/M
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
-import {UtilsLib} from "./libraries/UtilsLib.sol";
+import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
@@ -19,6 +19,7 @@ import {
     FlowConfig,
     SupplyConfig,
     Withdrawal,
+    MAX_SETTABLE_FLOW_CAP,
     IPublicAllocatorStaticTyping,
     IPublicAllocatorBase
 } from "./interfaces/IPublicAllocator.sol";
@@ -31,7 +32,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
     using UtilsLib for uint256;
-    using UtilsLib for uint128;
 
     /// CONSTANTS ///
 
@@ -94,6 +94,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         for (uint256 i = 0; i < withdrawals.length; i++) {
             allocations[i].marketParams = withdrawals[i].marketParams;
             Id id = withdrawals[i].marketParams.id();
+            MORPHO.accrueInterest(withdrawals[i].marketParams);
             uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
             uint128 withdrawnAssets = withdrawals[i].amount;
             // Clamp at 0 if withdrawnAssets is too big
@@ -103,7 +104,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
             totalWithdrawn += withdrawnAssets;
             allocations[i].assets = assets - withdrawnAssets;
-            flowCap[id].maxIn = (flowCap[id].maxIn).saturatingAdd(withdrawnAssets);
+            flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
@@ -111,12 +112,12 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         VAULT.reallocate(allocations);
 
         Id depositMarketId = depositMarketParams.id();
-        uint256 depositAssets = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
-        if (depositAssets > supplyCap[depositMarketId]) {
+        uint256 vaultSupplyInMarket = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
+        if (vaultSupplyInMarket > supplyCap[depositMarketId]) {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
         }
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
-        flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
+        flowCap[depositMarketId].maxOut += totalWithdrawn;
         emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
     }
 
@@ -139,6 +140,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
         for (uint256 i = 0; i < flowCaps.length; i++) {
+            if (flowCaps[i].cap.maxIn > MAX_SETTABLE_FLOW_CAP || flowCaps[i].cap.maxOut > MAX_SETTABLE_FLOW_CAP) {
+                revert ErrorsLib.MaxSettableFlowCapExceeded();
+            }
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
 
