@@ -95,6 +95,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         for (uint256 i = 0; i < withdrawals.length; i++) {
             allocations[i].marketParams = withdrawals[i].marketParams;
             Id id = withdrawals[i].marketParams.id();
+            MORPHO.accrueInterest(withdrawals[i].marketParams);
             uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
             uint128 withdrawnAssets = withdrawals[i].amount;
             // Clamp at 0 if withdrawnAssets is too big
