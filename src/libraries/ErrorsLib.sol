@@ -40,7 +40,7 @@ library ErrorsLib {
     error AlreadySet();
 
     /// @notice Thrown when there are duplicates with nonzero assets in `withdrawTo` arguments.
-    error InconsistentWithdrawTo(Withdrawal[] withdrawals, MarketParams depositMarketParams);
+    error InconsistentWithdrawTo();
 
     /// @notice Thrown when the PublicAllocatorFactory is called with a vault not made by the MetaMorphoFactory.
     error NotMetaMorpho();

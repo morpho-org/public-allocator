@@ -443,7 +443,7 @@ contract PublicAllocatorTest is IntegrationTest {
         // _setCap(allMarkets[1], CAP2);
         withdrawals.push(Withdrawal(idleParams, 1e18));
         withdrawals.push(Withdrawal(idleParams, 1e18));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.InconsistentWithdrawTo.selector, withdrawals, allMarkets[0]));
+        vm.expectRevert(ErrorsLib.InconsistentWithdrawTo.selector);
         publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
     }
 
@@ -455,7 +455,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlowCaps(flowCaps);
 
         withdrawals.push(Withdrawal(idleParams, 1e18));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.InconsistentWithdrawTo.selector, withdrawals, idleParams));
+        vm.expectRevert(ErrorsLib.InconsistentWithdrawTo.selector);
         publicAllocator.withdrawTo(withdrawals, idleParams);
     }
 }
