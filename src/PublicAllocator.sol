@@ -141,7 +141,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     function transferFee(address payable feeRecipient) external onlyOwner {
         uint256 balance = address(this).balance;
         feeRecipient.transfer(balance);
-        emit EventsLib.TransferFee(balance);
+        emit EventsLib.TransferFee(balance, feeRecipient);
     }
 
     /// @inheritdoc IPublicAllocatorBase

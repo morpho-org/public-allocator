@@ -18,7 +18,7 @@ library EventsLib {
     event SetFee(uint256 fee);
 
     /// @notice Emitted when the owner transfers the fee.
-    event TransferFee(uint256 amount);
+    event TransferFee(uint256 amount, address indexed feeRecipient);
 
     /// @notice Emitted when the owner updates some flow caps.
     event SetFlowCaps(FlowConfig[] flowCaps);
