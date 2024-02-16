@@ -535,6 +535,7 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals[0] = sortedWithdrawals[1];
         withdrawals[1] = sortedWithdrawals[0];
 
+        vm.expectRevert(ErrorsLib.InconsistentWithdrawals.selector);
         publicAllocator.reallocateTo(withdrawals, idleParams);
 
     }
