@@ -103,7 +103,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             uint128 withdrawnAssets = withdrawals[i].amount;
             totalWithdrawn += withdrawnAssets;
             flowCap[id].maxIn += withdrawnAssets;
+            if (flowCap[id].maxOut < withdrawnAssets) revert ErrorsLib.MaxOutflowExceeded(id);
             flowCap[id].maxOut -= withdrawnAssets;
+            if (assets < withdrawnAssets) revert ErrorsLib.NotEnoughSupply(id);
             allocations[i].assets = assets - withdrawnAssets;
             allocations[i].marketParams = withdrawals[i].marketParams;
 
@@ -112,6 +114,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
         allocations[withdrawals.length].marketParams = supplyMarketParams;
         allocations[withdrawals.length].assets = type(uint256).max;
+        if (flowCap[supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
         flowCap[supplyMarketId].maxIn -= totalWithdrawn;
         flowCap[supplyMarketId].maxOut += totalWithdrawn;
 
