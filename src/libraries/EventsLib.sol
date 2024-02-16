@@ -14,6 +14,9 @@ library EventsLib {
     /// @notice Emitted at the end of a public reallocation.
     event PublicReallocateTo(address sender, Id depositMarketId, uint256 depositedAssets);
 
+    /// @notice Emitted when the owner is set.
+    event SetOwner(address owner);
+    
     /// @notice Emitted when the owner changes the `fee`
     event SetFee(uint256 fee);
 

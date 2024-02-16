@@ -52,7 +52,7 @@ contract PublicAllocatorFactoryTest is IntegrationTest {
 
             assertTrue(factory.isPublicAllocator(address(publicAllocator)), "isPublicAllocator");
 
-            assertEq(publicAllocator.OWNER(), initialOwner, "owner");
+            assertEq(publicAllocator.owner(), initialOwner, "owner");
             assertEq(address(publicAllocator.VAULT()), address(vault), "vault");
         } else {
             vm.expectRevert(ErrorsLib.NotMetaMorpho.selector);

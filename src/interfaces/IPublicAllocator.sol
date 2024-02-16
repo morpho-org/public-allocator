@@ -40,14 +40,14 @@ struct Withdrawal {
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorBase {
-    /// @notice The address of the owner of the public allocator.
-    function OWNER() external view returns (address);
-
     /// @notice The address of the vault where the public allocator calls reallocate.
     function VAULT() external view returns (IMetaMorpho);
 
     /// @notice The address of the Morpho contract.
     function MORPHO() external view returns (IMorpho);
+
+    /// @notice The address of the owner of the public allocator.
+    function owner() external view returns (address);
 
     /// @notice The current fee.
     function fee() external view returns (uint256);
@@ -66,8 +66,11 @@ interface IPublicAllocatorBase {
         external
         payable;
 
-    /// @notice Set the current fee.
-    function setFee(uint256 _fee) external;
+    /// @notice Set the owner.
+    function setOwner(address newOwner) external;
+    
+    /// @notice Set the fee.
+    function setFee(uint256 newFee) external;
 
     /// @notice Transfer the current balance to `feeRecipient`.
     function transferFee(address payable feeRecipient) external;
