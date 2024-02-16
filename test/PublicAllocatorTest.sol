@@ -437,6 +437,33 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(marketAfter - marketBefore, flow);
     }
 
+    function testDuplicateInWithdrawals() public {
+        // Set flow limits
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(MAX_SETTABLE_FLOW_CAP, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
+
+        // Prepare public reallocation from 2 markets to 1
+        // _setCap(allMarkets[1], CAP2);
+        withdrawals.push(Withdrawal(idleParams, 1e18));
+        withdrawals.push(Withdrawal(idleParams, 1e18));
+        vm.expectRevert(ErrorsLib.InconsistentWithdrawTo.selector);
+        publicAllocator.withdrawTo(withdrawals, allMarkets[0]);
+    }
+
+    function testSameInWithdrawalAndDeposit() public {
+        // Set flow limits
+        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
+        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(MAX_SETTABLE_FLOW_CAP, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(flowCaps);
+
+        withdrawals.push(Withdrawal(idleParams, 1e18));
+        vm.expectRevert(ErrorsLib.InconsistentWithdrawTo.selector);
+        publicAllocator.withdrawTo(withdrawals, idleParams);
+    }
+
     function testMaxFlowCapValue() public {
         assertEq(MAX_SETTABLE_FLOW_CAP, type(uint128).max / 2);
     }

@@ -6,10 +6,10 @@ import {
 } from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
 import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
-
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
+
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
@@ -86,34 +86,45 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         if (msg.value != fee) revert ErrorsLib.IncorrectFee();
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
-        allocations[withdrawals.length].marketParams = depositMarketParams;
-        allocations[withdrawals.length].assets = type(uint256).max;
-
+        Id depositMarketId = depositMarketParams.id();
         uint128 totalWithdrawn;
 
         for (uint256 i = 0; i < withdrawals.length; i++) {
             Id id = withdrawals[i].marketParams.id();
-            MORPHO.accrueInterest(withdrawals[i].marketParams);
+
+            // Revert if the market is elsewhere in the list, or is the deposit market.
+            for (uint256 j = i + 1; j < withdrawals.length; j++) {
+                if (Id.unwrap(id) == Id.unwrap(withdrawals[j].marketParams.id())) {
+                    revert ErrorsLib.InconsistentWithdrawTo();
+                }
+            }
+            if (Id.unwrap(id) == Id.unwrap(depositMarketId)) revert ErrorsLib.InconsistentWithdrawTo();
+
             uint128 withdrawnAssets = withdrawals[i].amount;
             totalWithdrawn += withdrawnAssets;
 
+            MORPHO.accrueInterest(withdrawals[i].marketParams);
+            uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
+
             allocations[i].marketParams = withdrawals[i].marketParams;
-            allocations[i].assets =
-                MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT)) - withdrawnAssets;
+            allocations[i].assets = assets - withdrawnAssets;
             flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
+
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
 
-        VAULT.reallocate(allocations);
-
-        Id depositMarketId = depositMarketParams.id();
-        uint256 vaultSupplyInMarket = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
-        if (vaultSupplyInMarket > supplyCap[depositMarketId]) {
-            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
-        }
+        allocations[withdrawals.length].marketParams = depositMarketParams;
+        allocations[withdrawals.length].assets = type(uint256).max;
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
         flowCap[depositMarketId].maxOut += totalWithdrawn;
+
+        VAULT.reallocate(allocations);
+
+        if (MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT)) > supplyCap[depositMarketId]) {
+            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
+        }
+
         emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
     }
 
