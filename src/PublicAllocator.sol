@@ -97,16 +97,15 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             }
             if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.InconsistentWithdrawTo();
 
-            uint128 withdrawnAssets = withdrawals[i].amount;
-            totalWithdrawn += withdrawnAssets;
-
             MORPHO.accrueInterest(withdrawals[i].marketParams);
             uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
 
-            allocations[i].marketParams = withdrawals[i].marketParams;
-            allocations[i].assets = assets - withdrawnAssets;
+            uint128 withdrawnAssets = withdrawals[i].amount;
+            totalWithdrawn += withdrawnAssets;
             flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
+            allocations[i].assets = assets - withdrawnAssets;
+            allocations[i].marketParams = withdrawals[i].marketParams;
 
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
