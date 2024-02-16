@@ -128,9 +128,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /* OWNER ONLY */
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFee(uint256 _fee) external onlyOwner {
-        if (fee == _fee) revert ErrorsLib.AlreadySet();
-        fee = _fee;
+    function setFee(uint256 newFee) external onlyOwner {
+        if (fee == newFee) revert ErrorsLib.AlreadySet();
+        fee = newFee;
         emit EventsLib.SetFee(_fee);
     }
 
