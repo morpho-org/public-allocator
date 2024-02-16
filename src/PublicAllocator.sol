@@ -7,8 +7,7 @@ import {
 
 import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
-import {MorphoLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoLib.sol";
-import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/SharesMathLib.sol";
+
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
 
 import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
@@ -31,9 +30,7 @@ import {
 /// @notice Publically callable allocator for a MetaMorpho vault.
 contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoBalancesLib for IMorpho;
-    using MorphoLib for IMorpho;
     using MarketParamsLib for MarketParams;
-    using SharesMathLib for uint256;
     using UtilsLib for uint256;
 
     /// CONSTANTS ///
@@ -93,7 +90,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         uint128 totalWithdrawn;
 
         for (uint256 i = 0; i < withdrawals.length; i++) {
-            allocations[i].marketParams = withdrawals[i].marketParams;
             Id id = withdrawals[i].marketParams.id();
 
             // Revert if the market is elsewhere in the list, or is the deposit market.
@@ -102,17 +98,17 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             }
             if (Id.unwrap(id) == Id.unwrap(depositMarketId)) revert ErrorsLib.InconsistentWithdrawTo();
 
-            uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
             uint128 withdrawnAssets = withdrawals[i].amount;
-            // Clamp at 0 if withdrawnAssets is too big
-            if (withdrawnAssets > assets) {
-                withdrawnAssets = assets.toUint128();
-            }
-
             totalWithdrawn += withdrawnAssets;
+
+            MORPHO.accrueInterest(withdrawals[i].marketParams);
+            uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
+
+            allocations[i].marketParams = withdrawals[i].marketParams;
             allocations[i].assets = assets - withdrawnAssets;
             flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
+
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
 
