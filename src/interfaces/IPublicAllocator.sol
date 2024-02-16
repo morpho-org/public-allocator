@@ -72,11 +72,11 @@ interface IPublicAllocatorBase {
     function transferFee(address payable feeRecipient) external;
 
     /// @notice Sets the maximum inflow and outflow through public allocation for some markets.
+    /// @dev Max allowed inflow/outflow is MAX_SETTABLE_FLOW_CAP.
     /// @dev Doesn't revert if it doesn't change the storage at all.
     function setFlowCaps(FlowConfig[] calldata _flowCaps) external;
 
     /// @notice Sets the supply cap of a supply through public allocation for some markets.
-    /// @dev Max allowed inflow/outflow is MAX_SETTABLE_SUPPLY_CAP.
     /// @dev Doesn't revert if it doesn't change the storage at all.
     function setSupplyCaps(SupplyConfig[] calldata _supplyCaps) external;
 }
