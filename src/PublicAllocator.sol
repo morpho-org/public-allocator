@@ -112,8 +112,8 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         VAULT.reallocate(allocations);
 
         Id depositMarketId = depositMarketParams.id();
-        uint256 depositMarketAssets = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
-        if (depositMarketAssets > supplyCap[depositMarketId]) {
+        uint256 vaultSupplyInMarket = MORPHO.expectedSupplyAssets(depositMarketParams, address(VAULT));
+        if (vaultSupplyInMarket > supplyCap[depositMarketId]) {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
         }
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
