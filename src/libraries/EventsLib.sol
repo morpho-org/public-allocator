@@ -12,7 +12,7 @@ library EventsLib {
     event PublicWithdrawal(Id id, uint256 withdrawnAssets);
 
     /// @notice Emitted at the end of a public reallocation.
-    event PublicReallocateTo(address sender, Id depositMarketId, uint256 depositedAssets);
+    event PublicReallocateTo(address sender, Id supplyMarketId, uint256 suppliedAssets);
 
     /// @notice Emitted when the owner is set.
     event SetOwner(address owner);
@@ -21,7 +21,7 @@ library EventsLib {
     event SetFee(uint256 fee);
 
     /// @notice Emitted when the owner transfers the fee.
-    event TransferFee(uint256 amount);
+    event TransferFee(uint256 amount, address indexed feeRecipient);
 
     /// @notice Emitted when the owner updates some flow caps.
     event SetFlowCaps(FlowConfig[] flowCaps);

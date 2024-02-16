@@ -25,7 +25,7 @@ contract PublicAllocatorFactoryTest is IntegrationTest {
         new PublicAllocatorFactory(address(0));
     }
 
-    function testCreatePublicAllocator(address initialOwner, address vault, bytes32 salt, bool vaultCreatedByFactory)
+    function testCreatePublicAllocator(address initialOwner, address vault, bytes32 salt)
         public
     {
         vm.assume(address(initialOwner) != address(0));
@@ -37,26 +37,34 @@ contract PublicAllocatorFactoryTest is IntegrationTest {
         vm.mockCall(
             metaMorphoFactory,
             abi.encodeWithSelector(IMetaMorphoFactory.isMetaMorpho.selector, vault),
-            abi.encode(vaultCreatedByFactory)
+            abi.encode(true)
         );
 
-        if (vaultCreatedByFactory) {
-            vm.mockCall(vault, abi.encodeWithSelector(IMetaMorphoBase.MORPHO.selector), abi.encode(morpho));
+        vm.mockCall(vault, abi.encodeWithSelector(IMetaMorphoBase.MORPHO.selector), abi.encode(morpho));
 
-            vm.expectEmit(address(factory));
-            emit EventsLib.CreatePublicAllocator(expectedAddress, address(this), initialOwner, vault, salt);
+        vm.expectEmit(address(factory));
+        emit EventsLib.CreatePublicAllocator(expectedAddress, address(this), initialOwner, vault, salt);
 
-            IPublicAllocator publicAllocator = factory.createPublicAllocator(initialOwner, vault, salt);
+        IPublicAllocator publicAllocator = factory.createPublicAllocator(initialOwner, vault, salt);
 
-            assertEq(expectedAddress, address(publicAllocator), "computeCreate2Address");
+        assertEq(expectedAddress, address(publicAllocator), "computeCreate2Address");
 
-            assertTrue(factory.isPublicAllocator(address(publicAllocator)), "isPublicAllocator");
+        assertTrue(factory.isPublicAllocator(address(publicAllocator)), "isPublicAllocator");
 
-            assertEq(publicAllocator.owner(), initialOwner, "owner");
-            assertEq(address(publicAllocator.VAULT()), address(vault), "vault");
-        } else {
-            vm.expectRevert(ErrorsLib.NotMetaMorpho.selector);
-            factory.createPublicAllocator(initialOwner, vault, salt);
-        }
+        assertEq(publicAllocator.owner(), initialOwner, "owner");
+        assertEq(address(publicAllocator.VAULT()), address(vault), "vault");
+    }
+
+    function testCreatePublicAllocatorFail(address initialOwner, address vault, bytes32 salt) public {
+        vm.assume(address(initialOwner) != address(0));
+        vm.assume(address(vault) != address(0));
+
+        vm.mockCall(
+            metaMorphoFactory,
+            abi.encodeWithSelector(IMetaMorphoFactory.isMetaMorpho.selector, vault),
+            abi.encode(false)
+        );
+        vm.expectRevert(ErrorsLib.NotMetaMorpho.selector);
+        factory.createPublicAllocator(initialOwner, vault, salt);
     }
 }

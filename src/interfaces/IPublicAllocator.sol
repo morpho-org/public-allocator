@@ -9,14 +9,14 @@ import {
     MarketParams
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
-/// @dev Equal to type(uint128).max/2, so flow caps can always be stored on 128 bits
+/// @dev Equal to type(uint128).max/2, so flow caps can always be stored on 128 bits.
 /// @dev The actual max possible flow cap is type(uint128).max-1.
 uint128 constant MAX_SETTABLE_FLOW_CAP = 170141183460469231731687303715884105727;
 
 struct FlowCap {
-    /// @notice The maximum allowed inflow in a market
+    /// @notice The maximum allowed inflow in a market.
     uint128 maxIn;
-    /// @notice The maximum allowed outflow in a market
+    /// @notice The maximum allowed outflow in a market.
     uint128 maxOut;
 }
 
@@ -37,6 +37,9 @@ struct Withdrawal {
     uint128 amount;
 }
 
+/// @title IPublicAllocator
+/// @author Morpho Labs
+/// @custom:contact security@morpho.org
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorBase {
@@ -56,13 +59,13 @@ interface IPublicAllocatorBase {
     /// @notice A withdraw through public allocation can start and end above the cap.
     function supplyCap(Id) external view returns (uint256);
 
-    /// @notice Reallocate from a list of markets to one market.
+    /// @notice Reallocates from a list of markets to one market.
     /// @param withdrawals The markets to withdraw from,and the amounts to withdraw.
-    /// @param depositMarketParams The market receiving total withdrawn to.
+    /// @param supplyMarketParams The market receiving total withdrawn to.
     /// @dev Will call MetaMorpho's `reallocate`.
     /// @dev Checks that the public allocator constraints (flows, caps) are respected.
     /// @dev Will revert if a withdrawal amount is larger than available liquidity.
-    function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
+    function reallocateTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
         external
         payable;
 
@@ -72,7 +75,7 @@ interface IPublicAllocatorBase {
     /// @notice Set the fee.
     function setFee(uint256 newFee) external;
 
-    /// @notice Transfer the current balance to `feeRecipient`.
+    /// @notice Transfers the current balance to `feeRecipient`.
     function transferFee(address payable feeRecipient) external;
 
     /// @notice Sets the maximum inflow and outflow through public allocation for some markets.
@@ -85,6 +88,9 @@ interface IPublicAllocatorBase {
     function setSupplyCaps(SupplyConfig[] calldata _supplyCaps) external;
 }
 
+/// @title IPublicAllocator
+/// @author Morpho Labs
+/// @custom:contact security@morpho.org
 /// @dev This interface is inherited by PublicAllocator so that function signatures are checked by the compiler.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
