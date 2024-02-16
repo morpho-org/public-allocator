@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
-import {Id} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {Id, MarketParams} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {Withdrawal} from "../interfaces/IPublicAllocator.sol";
 
 /// @title ErrorsLib
 /// @author Morpho Labs
@@ -37,6 +38,12 @@ library ErrorsLib {
 
     /// @notice Thrown when the value is already set.
     error AlreadySet();
+
+    /// @notice Thrown when there are duplicates with nonzero assets in `withdrawTo` arguments.
+    error InconsistentWithdrawTo();
+
+    /// @notice Thrown when attempting to set max inflow/outflow above the MAX_SETTABLE_FLOW_CAP.
+    error MaxSettableFlowCapExceeded();
 
     /// @notice Thrown when the PublicAllocatorFactory is called with a vault not made by the MetaMorphoFactory.
     error NotMetaMorpho();
