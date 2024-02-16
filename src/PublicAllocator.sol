@@ -9,8 +9,6 @@ import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/M
 
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
-import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/SharesMathLib.sol";
-
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 
