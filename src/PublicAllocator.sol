@@ -2,19 +2,6 @@
 pragma solidity 0.8.24;
 
 import {
-    Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
-} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
-
-import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
-import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
-
-import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
-
-import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
-
-import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {EventsLib} from "./libraries/EventsLib.sol";
-import {
     FlowCap,
     FlowConfig,
     SupplyConfig,
@@ -23,6 +10,16 @@ import {
     IPublicAllocatorStaticTyping,
     IPublicAllocatorBase
 } from "./interfaces/IPublicAllocator.sol";
+import {
+    Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
+} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
+
+import {ErrorsLib} from "./libraries/ErrorsLib.sol";
+import {EventsLib} from "./libraries/EventsLib.sol";
+import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
+import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
+import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
 /// @title MetaMorpho
 /// @author Morpho Labs
@@ -33,7 +30,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MarketParamsLib for MarketParams;
     using UtilsLib for uint256;
 
-    /// CONSTANTS ///
+    /* CONSTANTS */
 
     /// @inheritdoc IPublicAllocatorBase
     address public immutable OWNER;
@@ -44,7 +41,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     IMetaMorpho public immutable VAULT;
 
-    /// STORAGE ///
+    /* STORAGE */
 
     /// @inheritdoc IPublicAllocatorBase
     uint256 public fee;
@@ -55,7 +52,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     mapping(Id => uint256) public supplyCap;
 
-    /// MODIFIER ///
+    /* MODIFIER */
 
     /// @dev Reverts if the caller is not the owner.
     modifier onlyOwner() {
@@ -63,7 +60,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         _;
     }
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev Initializes the contract.
     /// @param newOwner The owner of the contract.
@@ -76,7 +73,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         MORPHO = VAULT.MORPHO();
     }
 
-    /// PUBLIC ///
+    /* PUBLIC */
 
     /// @inheritdoc IPublicAllocatorBase
     function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
@@ -128,7 +125,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
     }
 
-    /// OWNER ONLY ///
+    /* OWNER ONLY */
 
     /// @inheritdoc IPublicAllocatorBase
     function setFee(uint256 _fee) external onlyOwner {
