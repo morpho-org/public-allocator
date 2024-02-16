@@ -60,7 +60,8 @@ interface IPublicAllocatorBase {
     /// @param withdrawals The markets to withdraw from,and the amounts to withdraw.
     /// @param depositMarketParams The market receiving total withdrawn to.
     /// @dev Will call MetaMorpho's `reallocate`.
-    /// @dev Checks that the public allocator constraints are respected.
+    /// @dev Checks that the public allocator constraints (flows, caps) are respected.
+    /// @dev Will revert if a withdrawal amount is larger than available liquidity.
     function withdrawTo(Withdrawal[] calldata withdrawals, MarketParams calldata depositMarketParams)
         external
         payable;
