@@ -11,8 +11,7 @@ import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries
 
 import {SharesMathLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/SharesMathLib.sol";
 
-import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
-import {UtilsLib} from "./libraries/UtilsLib.sol";
+import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
@@ -21,6 +20,7 @@ import {
     FlowConfig,
     SupplyConfig,
     Withdrawal,
+    MAX_SETTABLE_FLOW_CAP,
     IPublicAllocatorStaticTyping,
     IPublicAllocatorBase
 } from "./interfaces/IPublicAllocator.sol";
@@ -33,7 +33,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
     using UtilsLib for uint256;
-    using UtilsLib for uint128;
 
     /// CONSTANTS ///
 
@@ -105,7 +104,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
             totalWithdrawn += withdrawnAssets;
             allocations[i].assets = assets - withdrawnAssets;
-            flowCap[id].maxIn = (flowCap[id].maxIn).saturatingAdd(withdrawnAssets);
+            flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
@@ -118,7 +117,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(depositMarketId);
         }
         flowCap[depositMarketId].maxIn -= totalWithdrawn;
-        flowCap[depositMarketId].maxOut = (flowCap[depositMarketId].maxOut).saturatingAdd(totalWithdrawn);
+        flowCap[depositMarketId].maxOut += totalWithdrawn;
         emit EventsLib.PublicReallocateTo(msg.sender, depositMarketId, totalWithdrawn);
     }
 
@@ -141,6 +140,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
         for (uint256 i = 0; i < flowCaps.length; i++) {
+            if (flowCaps[i].cap.maxIn > MAX_SETTABLE_FLOW_CAP || flowCaps[i].cap.maxOut > MAX_SETTABLE_FLOW_CAP) {
+                revert ErrorsLib.MaxSettableFlowCapExceeded();
+            }
             flowCap[flowCaps[i].id] = flowCaps[i].cap;
         }
 
