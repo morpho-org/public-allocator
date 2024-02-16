@@ -93,8 +93,10 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             Id id = withdrawals[i].marketParams.id();
 
             // Revert if the market is elsewhere in the list, or is the deposit market.
-            for (uint256 j = i+1; j < withdrawals.length; j++) {
-                if (Id.unwrap(id) == Id.unwrap(withdrawals[j].marketParams.id())) revert ErrorsLib.InconsistentWithdrawTo();
+            for (uint256 j = i + 1; j < withdrawals.length; j++) {
+                if (Id.unwrap(id) == Id.unwrap(withdrawals[j].marketParams.id())) {
+                    revert ErrorsLib.InconsistentWithdrawTo();
+                }
             }
             if (Id.unwrap(id) == Id.unwrap(depositMarketId)) revert ErrorsLib.InconsistentWithdrawTo();
 
