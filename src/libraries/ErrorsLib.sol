@@ -34,4 +34,13 @@ library ErrorsLib {
 
     /// @notice Thrown when the PublicAllocatorFactory is called with a vault not made by the MetaMorphoFactory.
     error NotMetaMorpho();
+
+    /// @notice Thrown when attempting to withdraw more than the available supply of a market.
+    error NotEnoughSupply(Id id);
+
+    /// @notice Thrown when attempting to withdraw more than the max outflow of a market.
+    error MaxOutflowExceeded(Id id);
+
+    /// @notice Thrown when attempting to supply more than the max inflow of a market.
+    error MaxInflowExceeded(Id id);
 }
