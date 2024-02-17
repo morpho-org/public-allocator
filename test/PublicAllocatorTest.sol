@@ -77,7 +77,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
         withdrawals.push(Withdrawal(idleParams, flow));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxOutflowExceeded.selector,idleParams.id()));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxOutflowExceeded.selector, idleParams.id()));
         publicAllocator.reallocateTo(withdrawals, allMarkets[0]);
     }
 
@@ -88,7 +88,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
         withdrawals.push(Withdrawal(idleParams, flow));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxInflowExceeded.selector,allMarkets[0].id()));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxInflowExceeded.selector, allMarkets[0].id()));
         publicAllocator.reallocateTo(withdrawals, allMarkets[0]);
     }
 
@@ -498,9 +498,9 @@ contract PublicAllocatorTest is IntegrationTest {
 
         delete withdrawals;
 
-        withdrawals.push(Withdrawal(allMarkets[0],flow+1));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.NotEnoughSupply.selector,allMarkets[0].id()));
-        publicAllocator.reallocateTo(withdrawals,idleParams);
+        withdrawals.push(Withdrawal(allMarkets[0], flow + 1));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.NotEnoughSupply.selector, allMarkets[0].id()));
+        publicAllocator.reallocateTo(withdrawals, idleParams);
     }
 
     function testMaxOutflowExceeded() public {
@@ -511,11 +511,10 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
 
-        withdrawals.push(Withdrawal(idleParams, cap+1));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxOutflowExceeded.selector,idleParams.id()));
+        withdrawals.push(Withdrawal(idleParams, cap + 1));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxOutflowExceeded.selector, idleParams.id()));
         publicAllocator.reallocateTo(withdrawals, allMarkets[0]);
     }
-
 
     function testMaxInflowExceeded() public {
         uint128 cap = 1e18;
@@ -525,8 +524,8 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
 
-        withdrawals.push(Withdrawal(idleParams, cap+1));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxInflowExceeded.selector,allMarkets[0].id()));
+        withdrawals.push(Withdrawal(idleParams, cap + 1));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MaxInflowExceeded.selector, allMarkets[0].id()));
         publicAllocator.reallocateTo(withdrawals, allMarkets[0]);
     }
 }
