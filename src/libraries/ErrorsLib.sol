@@ -25,7 +25,7 @@ library ErrorsLib {
 
     /// @notice Thrown when `withdrawals` contains a duplicate or is not sorted.
     error InconsistentWithdrawals();
-    
+
     /// @notice Thrown when the deposit market is in `withdrawals`.
     error DepositMarketInWithdrawals();
 

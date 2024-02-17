@@ -31,13 +31,14 @@ contract CantReceive {
 // Withdrawal sorting snippet
 library SortWithdrawals {
     using MarketParamsLib for MarketParams;
-    // Sorts withdrawals in-place using gnome sort. 
+    // Sorts withdrawals in-place using gnome sort.
     // Does not detect duplicates.
     // The sort will not be in-place if you pass a storage array.
-    function sort(Withdrawal[] memory ws) pure internal returns (Withdrawal[] memory) {
-    uint256 i;
+
+    function sort(Withdrawal[] memory ws) internal pure returns (Withdrawal[] memory) {
+        uint256 i;
         while (i < ws.length) {
-            if (i == 0 || Id.unwrap(ws[i].marketParams.id()) >= Id.unwrap(ws[i-1].marketParams.id())) {
+            if (i == 0 || Id.unwrap(ws[i].marketParams.id()) >= Id.unwrap(ws[i - 1].marketParams.id())) {
                 i++;
             } else {
                 (ws[i], ws[i - 1]) = (ws[i - 1], ws[i]);
@@ -47,7 +48,6 @@ library SortWithdrawals {
         return ws;
     }
 }
-
 
 contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
@@ -524,8 +524,8 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(flowCaps);
 
-        withdrawals.push(Withdrawal(allMarkets[0],1e18));
-        withdrawals.push(Withdrawal(allMarkets[1],1e18));
+        withdrawals.push(Withdrawal(allMarkets[0], 1e18));
+        withdrawals.push(Withdrawal(allMarkets[1], 1e18));
         Withdrawal[] memory sortedWithdrawals = withdrawals.sort();
         // Created non-sorted withdrawals list
         withdrawals[0] = sortedWithdrawals[1];
@@ -533,7 +533,5 @@ contract PublicAllocatorTest is IntegrationTest {
 
         vm.expectRevert(ErrorsLib.InconsistentWithdrawals.selector);
         publicAllocator.reallocateTo(withdrawals, idleParams);
-
     }
-
 }
