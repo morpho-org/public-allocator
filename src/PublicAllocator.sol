@@ -103,8 +103,8 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
             flowCap[id].maxIn += withdrawnAssets;
             flowCap[id].maxOut -= withdrawnAssets;
-            allocations[i].assets = assets - withdrawnAssets;
             allocations[i].marketParams = withdrawals[i].marketParams;
+            allocations[i].assets = assets - withdrawnAssets;
 
             totalWithdrawn += withdrawnAssets;
 
