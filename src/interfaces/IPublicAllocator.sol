@@ -74,7 +74,7 @@ interface IPublicAllocatorBase {
     /// @notice Sets the owner.
     function setOwner(address newOwner) external;
     
-    /// @notice Set the fee.
+    /// @notice Sets the fee.
     function setFee(uint256 newFee) external;
 
     /// @notice Transfers the current balance to `feeRecipient`.
