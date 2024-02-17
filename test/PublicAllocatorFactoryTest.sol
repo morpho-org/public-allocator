@@ -25,9 +25,7 @@ contract PublicAllocatorFactoryTest is IntegrationTest {
         new PublicAllocatorFactory(address(0));
     }
 
-    function testCreatePublicAllocator(address initialOwner, address vault, bytes32 salt)
-        public
-    {
+    function testCreatePublicAllocator(address initialOwner, address vault, bytes32 salt) public {
         vm.assume(address(initialOwner) != address(0));
         vm.assume(address(vault) != address(0));
 
@@ -35,9 +33,7 @@ contract PublicAllocatorFactoryTest is IntegrationTest {
         address expectedAddress = computeCreate2Address(salt, initCodeHash, address(factory));
 
         vm.mockCall(
-            metaMorphoFactory,
-            abi.encodeWithSelector(IMetaMorphoFactory.isMetaMorpho.selector, vault),
-            abi.encode(true)
+            metaMorphoFactory, abi.encodeWithSelector(IMetaMorphoFactory.isMetaMorpho.selector, vault), abi.encode(true)
         );
 
         vm.mockCall(vault, abi.encodeWithSelector(IMetaMorphoBase.MORPHO.selector), abi.encode(morpho));
