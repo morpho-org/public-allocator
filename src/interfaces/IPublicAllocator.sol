@@ -71,7 +71,7 @@ interface IPublicAllocatorBase {
         external
         payable;
 
-    /// @notice Set the owner.
+    /// @notice Sets the owner.
     function setOwner(address newOwner) external;
     
     /// @notice Set the fee.
