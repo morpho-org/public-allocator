@@ -86,16 +86,13 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         Id supplyMarketId = supplyMarketParams.id();
         uint128 totalWithdrawn;
 
+        Id id;
+        Id prevId;
         for (uint256 i = 0; i < withdrawals.length; i++) {
-            Id id = withdrawals[i].marketParams.id();
-
-            // Revert if the market is elsewhere in the list, or is the supply market.
-            for (uint256 j = i + 1; j < withdrawals.length; j++) {
-                if (Id.unwrap(id) == Id.unwrap(withdrawals[j].marketParams.id())) {
-                    revert ErrorsLib.InconsistentWithdrawTo();
-                }
-            }
-            if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.InconsistentWithdrawTo();
+            prevId = id;
+            id = withdrawals[i].marketParams.id();
+            if (Id.unwrap(id) <= Id.unwrap(prevId)) revert ErrorsLib.InconsistentWithdrawals();
+            if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.DepositMarketInWithdrawals();
 
             MORPHO.accrueInterest(withdrawals[i].marketParams);
             uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));

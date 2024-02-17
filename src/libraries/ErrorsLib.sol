@@ -23,8 +23,11 @@ library ErrorsLib {
     /// @notice Thrown when the value is already set.
     error AlreadySet();
 
-    /// @notice Thrown when there are duplicates with nonzero assets in `reallocateTo` arguments.
-    error InconsistentWithdrawTo();
+    /// @notice Thrown when `withdrawals` contains a duplicate or is not sorted.
+    error InconsistentWithdrawals();
+
+    /// @notice Thrown when the deposit market is in `withdrawals`.
+    error DepositMarketInWithdrawals();
 
     /// @notice Thrown when attempting to set max inflow/outflow above the MAX_SETTABLE_FLOW_CAP.
     error MaxSettableFlowCapExceeded();
