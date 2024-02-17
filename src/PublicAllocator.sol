@@ -33,22 +33,18 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /* CONSTANTS */
 
     /// @inheritdoc IPublicAllocatorBase
-    address public immutable OWNER;
-
-    /// @inheritdoc IPublicAllocatorBase
     IMorpho public immutable MORPHO;
-
     /// @inheritdoc IPublicAllocatorBase
     IMetaMorpho public immutable VAULT;
 
     /* STORAGE */
 
     /// @inheritdoc IPublicAllocatorBase
+    address public owner;
+    /// @inheritdoc IPublicAllocatorBase
     uint256 public fee;
-
     /// @inheritdoc IPublicAllocatorStaticTyping
     mapping(Id => FlowCap) public flowCap;
-
     /// @inheritdoc IPublicAllocatorBase
     mapping(Id => uint256) public supplyCap;
 
@@ -56,7 +52,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// @dev Reverts if the caller is not the owner.
     modifier onlyOwner() {
-        if (msg.sender != OWNER) revert ErrorsLib.NotOwner();
+        if (msg.sender != owner) revert ErrorsLib.NotOwner();
         _;
     }
 
@@ -68,7 +64,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     constructor(address newOwner, address vault) {
         if (newOwner == address(0)) revert ErrorsLib.ZeroAddress();
         if (vault == address(0)) revert ErrorsLib.ZeroAddress();
-        OWNER = newOwner;
+        owner = newOwner;
         VAULT = IMetaMorpho(vault);
         MORPHO = VAULT.MORPHO();
     }
@@ -128,6 +124,13 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     }
 
     /* OWNER ONLY */
+
+    /// @inheritdoc IPublicAllocatorBase
+    function setOwner(address newOwner) external onlyOwner {
+        if (owner == newOwner) revert ErrorsLib.AlreadySet();
+        owner = newOwner;
+        emit EventsLib.SetOwner(newOwner);
+    }
 
     /// @inheritdoc IPublicAllocatorBase
     function setFee(uint256 newFee) external onlyOwner {

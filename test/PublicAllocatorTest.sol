@@ -9,7 +9,6 @@ import {
     MarketParams,
     IMorpho,
     Id,
-    Ownable,
     stdError
 } from "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
 import {PublicAllocator, FlowConfig, SupplyConfig, Withdrawal, FlowCap} from "../src/PublicAllocator.sol";
@@ -83,7 +82,19 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testOwner() public {
-        assertEq(publicAllocator.OWNER(), address(OWNER));
+        assertEq(publicAllocator.owner(), address(OWNER));
+    }
+
+    function testSetOwner() public {
+        vm.prank(OWNER);
+        publicAllocator.setOwner(address(0));
+        assertEq(publicAllocator.owner(), address(0));
+    }
+
+    function testSetOwnerFail() public {
+        vm.expectRevert(ErrorsLib.AlreadySet.selector);
+        vm.prank(OWNER);
+        publicAllocator.setOwner(OWNER);
     }
 
     function testDeployAddressZeroFail() public {
