@@ -228,17 +228,13 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals.push(Withdrawal(idleParams, flow));
         withdrawals.push(Withdrawal(allMarkets[1], flow));
 
-        Withdrawal[] memory sortedWithdrawals = withdrawals.sort();
-        withdrawals[0] = sortedWithdrawals[0];
-        withdrawals[1] = sortedWithdrawals[1];
-
         vm.expectEmit(address(publicAllocator));
         emit EventsLib.PublicWithdrawal(idleParams.id(), flow);
         emit EventsLib.PublicWithdrawal(allMarkets[1].id(), flow);
         emit EventsLib.PublicReallocateTo(sender, allMarkets[0].id(), 2 * flow);
 
         vm.prank(sender);
-        publicAllocator.reallocateTo(withdrawals, allMarkets[0]);
+        publicAllocator.reallocateTo(withdrawals.sort(), allMarkets[0]);
     }
 
     function testReallocateNetting(uint128 flow) public {
