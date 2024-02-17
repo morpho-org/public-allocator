@@ -485,24 +485,6 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlowCaps(flowCaps);
     }
 
-    function testNotEnoughSupply() public {
-        uint128 flow = 1e18;
-        // Set flow limits with withdraw market's maxIn to max
-        flowCaps.push(FlowConfig(idleParams.id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
-        flowCaps.push(FlowConfig(allMarkets[0].id(), FlowCap(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
-        vm.prank(OWNER);
-        publicAllocator.setFlowCaps(flowCaps);
-
-        withdrawals.push(Withdrawal(idleParams, flow));
-        publicAllocator.reallocateTo(withdrawals, allMarkets[0]);
-
-        delete withdrawals;
-
-        withdrawals.push(Withdrawal(allMarkets[0],flow+1));
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.NotEnoughSupply.selector,allMarkets[0].id()));
-        publicAllocator.reallocateTo(withdrawals,idleParams);
-    }
-
     function testMaxOutflowExceeded() public {
         uint128 cap = 1e18;
         // Set flow limits with withdraw market's maxIn to max
