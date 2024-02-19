@@ -71,7 +71,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         payable
     {
         if (msg.value != fee[vault]) revert ErrorsLib.IncorrectFee();
-        // accruedFee[vault] += msg.value;
+        accruedFee[vault] += msg.value;
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
         Id supplyMarketId = supplyMarketParams.id();
@@ -111,7 +111,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
         IMetaMorpho(vault).reallocate(allocations);
 
-        if (MORPHO.expectedSupplyAssets(supplyMarketParams, address(vault)) > supplyCap[vault][supplyMarketId]) {
+        if (MORPHO.expectedSupplyAssets(supplyMarketParams, vault) > supplyCap[vault][supplyMarketId]) {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(supplyMarketId);
         }
 

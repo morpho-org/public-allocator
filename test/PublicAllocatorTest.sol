@@ -61,7 +61,7 @@ contract PublicAllocatorTest is IntegrationTest {
     function setUp() public override {
         super.setUp();
 
-        publicAllocator = IPublicAllocator(address(new PublicAllocator(vault.owner())));
+        publicAllocator = IPublicAllocator(address(new PublicAllocator(address(vault.MORPHO()))));
         vm.prank(OWNER);
         vault.setIsAllocator(address(publicAllocator), true);
 
@@ -82,19 +82,19 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testOwner() public {
-        assertEq(publicAllocator.owner(address(vault)), address(OWNER));
+        assertEq(publicAllocator.owner(address(vault)), address(0));
     }
 
     function testSetOwner() public {
         vm.prank(OWNER);
-        publicAllocator.setOwner(address(vault), address(0));
-        assertEq(publicAllocator.owner(address(vault)), address(0));
+        publicAllocator.setOwner(address(vault), address(1));
+        assertEq(publicAllocator.owner(address(vault)), address(1));
     }
 
     function testSetOwnerFail() public {
         vm.expectRevert(ErrorsLib.AlreadySet.selector);
         vm.prank(OWNER);
-        publicAllocator.setOwner(address(vault), OWNER);
+        publicAllocator.setOwner(address(vault), address(0));
     }
 
     function testReallocateCapZeroOutflowByDefault(uint128 flow) public {
