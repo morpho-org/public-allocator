@@ -2,9 +2,9 @@
 pragma solidity 0.8.24;
 
 import {
-    FlowCap,
-    FlowConfig,
-    SupplyConfig,
+    FlowCaps,
+    FlowCapsConfig,
+    SupplyCapConfig,
     Withdrawal,
     MAX_SETTABLE_FLOW_CAP,
     IPublicAllocatorStaticTyping,
@@ -44,7 +44,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     uint256 public fee;
     /// @inheritdoc IPublicAllocatorStaticTyping
-    mapping(Id => FlowCap) public flowCap;
+    mapping(Id => FlowCaps) public flowCaps;
     /// @inheritdoc IPublicAllocatorBase
     mapping(Id => uint256) public supplyCap;
 
@@ -94,11 +94,11 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
             uint128 withdrawnAssets = withdrawals[i].amount;
 
-            if (flowCap[id].maxOut < withdrawnAssets) revert ErrorsLib.MaxOutflowExceeded(id);
+            if (flowCaps[id].maxOut < withdrawnAssets) revert ErrorsLib.MaxOutflowExceeded(id);
             if (assets < withdrawnAssets) revert ErrorsLib.NotEnoughSupply(id);
 
-            flowCap[id].maxIn += withdrawnAssets;
-            flowCap[id].maxOut -= withdrawnAssets;
+            flowCaps[id].maxIn += withdrawnAssets;
+            flowCaps[id].maxOut -= withdrawnAssets;
             allocations[i].marketParams = withdrawals[i].marketParams;
             allocations[i].assets = assets - withdrawnAssets;
 
@@ -107,10 +107,10 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
         }
 
-        if (flowCap[supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
+        if (flowCaps[supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
 
-        flowCap[supplyMarketId].maxIn -= totalWithdrawn;
-        flowCap[supplyMarketId].maxOut += totalWithdrawn;
+        flowCaps[supplyMarketId].maxIn -= totalWithdrawn;
+        flowCaps[supplyMarketId].maxOut += totalWithdrawn;
         allocations[withdrawals.length].marketParams = supplyMarketParams;
         allocations[withdrawals.length].assets = type(uint256).max;
 
@@ -147,23 +147,23 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFlowCaps(FlowConfig[] calldata flowCaps) external onlyOwner {
-        for (uint256 i = 0; i < flowCaps.length; i++) {
-            if (flowCaps[i].cap.maxIn > MAX_SETTABLE_FLOW_CAP || flowCaps[i].cap.maxOut > MAX_SETTABLE_FLOW_CAP) {
+    function setFlowCaps(FlowCapsConfig[] calldata config) external onlyOwner {
+        for (uint256 i = 0; i < config.length; i++) {
+            if (config[i].caps.maxIn > MAX_SETTABLE_FLOW_CAP || config[i].caps.maxOut > MAX_SETTABLE_FLOW_CAP) {
                 revert ErrorsLib.MaxSettableFlowCapExceeded();
             }
-            flowCap[flowCaps[i].id] = flowCaps[i].cap;
+            flowCaps[config[i].id] = config[i].caps;
         }
 
-        emit EventsLib.SetFlowCaps(flowCaps);
+        emit EventsLib.SetFlowCaps(config);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setSupplyCaps(SupplyConfig[] calldata supplyCaps) external onlyOwner {
-        for (uint256 i = 0; i < supplyCaps.length; i++) {
-            supplyCap[supplyCaps[i].id] = supplyCaps[i].cap;
+    function setSupplyCaps(SupplyCapConfig[] calldata config) external onlyOwner {
+        for (uint256 i = 0; i < config.length; i++) {
+            supplyCap[config[i].id] = config[i].cap;
         }
 
-        emit EventsLib.SetSupplyCaps(supplyCaps);
+        emit EventsLib.SetSupplyCaps(config);
     }
 }

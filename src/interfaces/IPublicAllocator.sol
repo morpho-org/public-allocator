@@ -13,19 +13,19 @@ import {
 /// @dev The actual max possible flow cap is type(uint128).max-1.
 uint128 constant MAX_SETTABLE_FLOW_CAP = 170141183460469231731687303715884105727;
 
-struct FlowCap {
+struct FlowCaps {
     /// @notice The maximum allowed inflow in a market.
     uint128 maxIn;
     /// @notice The maximum allowed outflow in a market.
     uint128 maxOut;
 }
 
-struct FlowConfig {
+struct FlowCapsConfig {
     Id id;
-    FlowCap cap;
+    FlowCaps caps;
 }
 
-struct SupplyConfig {
+struct SupplyCapConfig {
     Id id;
     uint256 cap;
 }
@@ -83,11 +83,11 @@ interface IPublicAllocatorBase {
     /// @notice Sets the maximum inflow and outflow through public allocation for some markets.
     /// @dev Max allowed inflow/outflow is MAX_SETTABLE_FLOW_CAP.
     /// @dev Doesn't revert if it doesn't change the storage at all.
-    function setFlowCaps(FlowConfig[] calldata _flowCaps) external;
+    function setFlowCaps(FlowCapsConfig[] calldata config) external;
 
     /// @notice Sets the supply cap of a supply through public allocation for some markets.
     /// @dev Doesn't revert if it doesn't change the storage at all.
-    function setSupplyCaps(SupplyConfig[] calldata _supplyCaps) external;
+    function setSupplyCaps(SupplyCapConfig[] calldata config) external;
 }
 
 /// @title IPublicAllocator
@@ -97,7 +97,7 @@ interface IPublicAllocatorBase {
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
     /// @notice Returns (maximum inflow, maximum outflow) through public allocation of a given market.
-    function flowCap(Id) external view returns (uint128, uint128);
+    function flowCaps(Id) external view returns (uint128, uint128);
 }
 
 /// @title IPublicAllocator
@@ -107,5 +107,5 @@ interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
 /// signatures.
 interface IPublicAllocator is IPublicAllocatorBase {
     /// @notice Returns the maximum inflow and maximum outflow through public allocation of a given market.
-    function flowCap(Id) external view returns (FlowCap memory);
+    function flowCaps(Id) external view returns (FlowCaps memory);
 }
