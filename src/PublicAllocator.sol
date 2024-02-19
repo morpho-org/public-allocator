@@ -71,7 +71,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         payable
     {
         if (msg.value != fee[vault]) revert ErrorsLib.IncorrectFee();
-        accruedFee[vault] += msg.value;
+        if (msg.value > 0) accruedFee[vault] += msg.value;
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
         Id supplyMarketId = supplyMarketParams.id();
