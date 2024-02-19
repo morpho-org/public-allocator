@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
-import {FlowCapsConfig, SupplyCapConfig, Id} from "../interfaces/IPublicAllocator.sol";
+import {FlowCapsConfig, SupplyCapConfig, Withdrawal, MarketParams, Id} from "../interfaces/IPublicAllocator.sol";
 
 /// @title EventsLib
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
 /// @notice Library exposing events.
 library EventsLib {
-    /// @notice Emitted during a public reallocation for each withdrawn-from market.
-    event PublicWithdrawal(address indexed vault, Id id, uint256 withdrawnAssets);
-
     /// @notice Emitted at the end of a public reallocation.
-    event PublicReallocateTo(address indexed vault, address sender, Id supplyMarketId, uint256 suppliedAssets);
+    event PublicReallocateTo(
+        address indexed sender, address indexed vault, Withdrawal[] withdrawals, MarketParams supplyMarketParams
+    );
 
     /// @notice Emitted when the owner is set for a vault.
     event SetOwner(address indexed vault, address owner);

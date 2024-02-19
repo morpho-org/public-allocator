@@ -233,9 +233,7 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals.push(Withdrawal(allMarkets[1], flow));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.PublicWithdrawal(address(vault), idleParams.id(), flow);
-        emit EventsLib.PublicWithdrawal(address(vault), allMarkets[1].id(), flow);
-        emit EventsLib.PublicReallocateTo(address(vault), sender, allMarkets[0].id(), 2 * flow);
+        emit EventsLib.PublicReallocateTo(sender, address(vault), withdrawals.sort(), allMarkets[0]);
 
         vm.prank(sender);
         publicAllocator.reallocateTo(address(vault), withdrawals.sort(), allMarkets[0]);

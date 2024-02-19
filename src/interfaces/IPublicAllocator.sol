@@ -108,6 +108,7 @@ interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
 /// @dev Use this interface for PublicAllocator to have access to all the functions with the appropriate function
 /// signatures.
 interface IPublicAllocator is IPublicAllocatorBase {
-    /// @notice Returns the maximum inflow and maximum outflow through public allocation of a given market for a given vault.
+    /// @notice Returns the maximum inflow and maximum outflow through public allocation of a given market for a given
+    /// vault.
     function flowCaps(address vault, Id) external view returns (FlowCaps memory);
 }

@@ -98,8 +98,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             allocations[i].assets = assets - withdrawnAssets;
 
             totalWithdrawn += withdrawnAssets;
-
-            emit EventsLib.PublicWithdrawal(vault, id, withdrawnAssets);
         }
 
         if (flowCaps[vault][supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
@@ -115,7 +113,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(supplyMarketId);
         }
 
-        emit EventsLib.PublicReallocateTo(msg.sender, vault, supplyMarketId, totalWithdrawn);
+        emit EventsLib.PublicReallocateTo(msg.sender, vault, withdrawals, supplyMarketParams);
     }
 
     /* OWNER ONLY */
