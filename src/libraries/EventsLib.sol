@@ -15,10 +15,10 @@ library EventsLib {
     event PublicReallocateTo(address sender, Id supplyMarketId, uint256 suppliedAssets);
 
     /// @notice Emitted when the owner is set.
-    event SetOwner(address owner);
-    
+    event SetOwner(address vault, address owner);
+
     /// @notice Emitted when the owner changes the `fee`
-    event SetFee(uint256 fee);
+    event SetFee(address vault, uint256 fee);
 
     /// @notice Emitted when the owner transfers the fee.
     event TransferFee(uint256 amount, address indexed feeRecipient);
