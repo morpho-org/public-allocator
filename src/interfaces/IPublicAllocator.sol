@@ -47,7 +47,7 @@ interface IPublicAllocatorBase {
     function MORPHO() external view returns (IMorpho);
 
     /// @notice The address of the owner of the public allocator config for a given vault.
-    /// @dev The owner of the underlying vault always have the public allocator owner capabilities.
+    /// @dev The owner of the underlying vault always has the public allocator owner capabilities.
     function owner(address vault) external view returns (address);
 
     /// @notice The current ETH fee for a given vault.
