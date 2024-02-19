@@ -24,7 +24,7 @@ import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries
 /// @title PublicAllocator
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-/// @notice Publically callable allocator for MetaMorpho vaults.
+/// @notice Publicly callable allocator for MetaMorpho vaults.
 contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
