@@ -178,7 +178,7 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(in1, out1)));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFlowCaps(flowCaps);
+        emit EventsLib.SetFlowCaps(address(vault), flowCaps);
 
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
@@ -198,7 +198,7 @@ contract PublicAllocatorTest is IntegrationTest {
         supplyCaps.push(SupplyCapConfig(allMarkets[0].id(), cap1));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetSupplyCaps(supplyCaps);
+        emit EventsLib.SetSupplyCaps(address(vault), supplyCaps);
 
         vm.prank(OWNER);
         publicAllocator.setSupplyCaps(address(vault), supplyCaps);
@@ -233,9 +233,9 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals.push(Withdrawal(allMarkets[1], flow));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.PublicWithdrawal(idleParams.id(), flow);
-        emit EventsLib.PublicWithdrawal(allMarkets[1].id(), flow);
-        emit EventsLib.PublicReallocateTo(sender, allMarkets[0].id(), 2 * flow);
+        emit EventsLib.PublicWithdrawal(address(vault), idleParams.id(), flow);
+        emit EventsLib.PublicWithdrawal(address(vault), allMarkets[1].id(), flow);
+        emit EventsLib.PublicReallocateTo(address(vault), sender, allMarkets[0].id(), 2 * flow);
 
         vm.prank(sender);
         publicAllocator.reallocateTo(address(vault), withdrawals.sort(), allMarkets[0]);

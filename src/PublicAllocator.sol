@@ -99,7 +99,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
             totalWithdrawn += withdrawnAssets;
 
-            emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
+            emit EventsLib.PublicWithdrawal(vault, id, withdrawnAssets);
         }
 
         if (flowCaps[vault][supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
@@ -115,7 +115,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(supplyMarketId);
         }
 
-        emit EventsLib.PublicReallocateTo(msg.sender, supplyMarketId, totalWithdrawn);
+        emit EventsLib.PublicReallocateTo(msg.sender, vault, supplyMarketId, totalWithdrawn);
     }
 
     /* OWNER ONLY */
@@ -139,7 +139,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         uint256 claimed = accruedFee[vault];
         accruedFee[vault] = 0;
         feeRecipient.transfer(claimed);
-        emit EventsLib.TransferFee(claimed, feeRecipient);
+        emit EventsLib.TransferFee(vault, claimed, feeRecipient);
     }
 
     /// @inheritdoc IPublicAllocatorBase
@@ -151,7 +151,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             flowCaps[vault][config[i].id] = config[i].caps;
         }
 
-        emit EventsLib.SetFlowCaps(config);
+        emit EventsLib.SetFlowCaps(vault, config);
     }
 
     /// @inheritdoc IPublicAllocatorBase
@@ -160,6 +160,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             supplyCap[vault][config[i].id] = config[i].cap;
         }
 
-        emit EventsLib.SetSupplyCaps(config);
+        emit EventsLib.SetSupplyCaps(vault, config);
     }
 }
