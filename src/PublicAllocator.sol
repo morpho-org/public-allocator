@@ -21,10 +21,10 @@ import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib
 import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
-/// @title MetaMorpho
+/// @title PublicAllocator
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-/// @notice Publically callable allocator for a MetaMorpho vault.
+/// @notice Publically callable allocator for MetaMorpho vaults.
 contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
@@ -41,7 +41,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     mapping(address => address) public owner;
     /// @inheritdoc IPublicAllocatorBase
     mapping(address => uint256) public fee;
-    /// Accrued fee.
+    /// @inheritdoc IPublicAllocatorBase
     mapping(address => uint256) public accruedFee;
     /// @inheritdoc IPublicAllocatorStaticTyping
     mapping(address => mapping(Id => FlowCaps)) public flowCaps;
@@ -50,7 +50,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /* MODIFIER */
 
-    /// @dev Reverts if the caller is not the owner.
+    /// @dev Reverts if the caller is not the owner for this vault or the vault owner.
     modifier onlyOwner(address vault) {
         if (msg.sender != owner[vault] && msg.sender != IMetaMorpho(vault).owner()) revert ErrorsLib.NotOwner();
         _;
