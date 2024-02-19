@@ -120,6 +120,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testConfigureFlowAccessFail(address sender) public {
         vm.assume(sender != OWNER);
+        vm.assume(sender != address(0));
 
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 0)));
 
