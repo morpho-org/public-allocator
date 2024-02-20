@@ -11,9 +11,6 @@ library ErrorsLib {
     /// @notice Thrown when the `msg.sender` is not the `owner`.
     error NotOwner();
 
-    /// @notice Thrown when the address passed is the zero address.
-    error ZeroAddress();
-
     /// @notice Thrown when the reallocation fee given is wrong.
     error IncorrectFee();
 
@@ -31,9 +28,6 @@ library ErrorsLib {
 
     /// @notice Thrown when attempting to set max inflow/outflow above the MAX_SETTABLE_FLOW_CAP.
     error MaxSettableFlowCapExceeded();
-
-    /// @notice Thrown when the PublicAllocatorFactory is called with a vault not made by the MetaMorphoFactory.
-    error NotMetaMorpho();
 
     /// @notice Thrown when attempting to withdraw more than the available supply of a market.
     error NotEnoughSupply(Id id);
