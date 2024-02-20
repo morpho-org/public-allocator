@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
-import {FlowCapsConfig, SupplyCapConfig, Id} from "../interfaces/IPublicAllocator.sol";
+import {FlowCapsConfig, Id} from "../interfaces/IPublicAllocator.sol";
 
 /// @title EventsLib
 /// @author Morpho Labs
@@ -25,7 +25,4 @@ library EventsLib {
 
     /// @notice Emitted when the owner updates some flow caps for a vault.
     event SetFlowCaps(address indexed vault, FlowCapsConfig[] config);
-
-    /// @notice Emitted when the owner updates some supply caps for a vault.
-    event SetSupplyCaps(address indexed vault, SupplyCapConfig[] config);
 }
