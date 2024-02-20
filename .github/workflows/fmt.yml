@@ -1,4 +1,4 @@
-name: test
+name: forge fmt
 
 on:
   workflow_dispatch:
@@ -27,13 +27,7 @@ jobs:
         with:
           version: nightly
 
-      - name: Run Forge build
+      - name: Run formatter
         run: |
-          forge --version
-          forge build --sizes --skip Import
-        id: build
-
-      - name: Run Forge tests
-        run: |
-          forge test -vvv
-        id: test
+          forge fmt --check
+        id: fmt
