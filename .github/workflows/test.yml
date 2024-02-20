@@ -30,10 +30,10 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build
+          forge build --sizes
         id: build
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          yarn --cwd lib/metamorpho/ build:forge && forge test -vvv
         id: test
