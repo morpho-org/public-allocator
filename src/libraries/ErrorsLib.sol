@@ -17,9 +17,6 @@ library ErrorsLib {
     /// @notice Thrown when the reallocation fee given is wrong.
     error IncorrectFee();
 
-    /// @notice Thrown when the supply cap has been exceeded on market `id` during a reallocation of funds.
-    error PublicAllocatorSupplyCapExceeded(Id id);
-
     /// @notice Thrown when the value is already set.
     error AlreadySet();
 

@@ -45,8 +45,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     mapping(address => uint256) public accruedFee;
     /// @inheritdoc IPublicAllocatorStaticTyping
     mapping(address => mapping(Id => FlowCaps)) public flowCaps;
-    /// @inheritdoc IPublicAllocatorBase
-    mapping(address => mapping(Id => uint256)) public supplyCap;
 
     /* MODIFIER */
 
@@ -111,10 +109,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
         IMetaMorpho(vault).reallocate(allocations);
 
-        if (MORPHO.expectedSupplyAssets(supplyMarketParams, vault) > supplyCap[vault][supplyMarketId]) {
-            revert ErrorsLib.PublicAllocatorSupplyCapExceeded(supplyMarketId);
-        }
-
         emit EventsLib.PublicReallocateTo(msg.sender, vault, supplyMarketId, totalWithdrawn);
     }
 
@@ -152,14 +146,5 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         }
 
         emit EventsLib.SetFlowCaps(vault, config);
-    }
-
-    /// @inheritdoc IPublicAllocatorBase
-    function setSupplyCaps(address vault, SupplyCapConfig[] calldata config) external onlyOwner(vault) {
-        for (uint256 i = 0; i < config.length; i++) {
-            supplyCap[vault][config[i].id] = config[i].cap;
-        }
-
-        emit EventsLib.SetSupplyCaps(vault, config);
     }
 }

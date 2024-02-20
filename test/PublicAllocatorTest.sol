@@ -52,7 +52,6 @@ contract PublicAllocatorTest is IntegrationTest {
     IPublicAllocator public publicAllocator;
     Withdrawal[] internal withdrawals;
     FlowCapsConfig[] internal flowCaps;
-    SupplyCapConfig[] internal supplyCaps;
 
     using SortWithdrawals for Withdrawal[];
     using MarketParamsLib for MarketParams;
@@ -72,13 +71,6 @@ contract PublicAllocatorTest is IntegrationTest {
 
         _setCap(allMarkets[0], CAP2);
         _sortSupplyQueueIdleLast();
-
-        // Remove public allocator caps by default
-        supplyCaps.push(SupplyCapConfig(idleParams.id(), type(uint256).max));
-        supplyCaps.push(SupplyCapConfig(allMarkets[0].id(), type(uint256).max));
-        vm.prank(OWNER);
-        publicAllocator.setSupplyCaps(address(vault), supplyCaps);
-        delete supplyCaps;
     }
 
     function testOwner() public {
@@ -145,15 +137,6 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFee(address(vault), fee);
     }
 
-    function testSetCapAccessFail(address sender, Id id, uint256 cap) public {
-        vm.assume(sender != OWNER);
-        vm.assume(sender != address(0));
-        vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotOwner.selector);
-        supplyCaps.push(SupplyCapConfig(id, cap));
-        publicAllocator.setSupplyCaps(address(vault), supplyCaps);
-    }
-
     function testSetFee(uint256 fee) public {
         vm.assume(fee != publicAllocator.fee(address(vault)));
         vm.prank(OWNER);
@@ -195,24 +178,6 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCap = publicAllocator.flowCaps(address(vault), allMarkets[0].id());
         assertEq(flowCap.maxIn, in1);
         assertEq(flowCap.maxOut, out1);
-    }
-
-    function testSetSupplyCaps(uint256 cap0, uint256 cap1) public {
-        supplyCaps.push(SupplyCapConfig(idleParams.id(), cap0));
-        supplyCaps.push(SupplyCapConfig(allMarkets[0].id(), cap1));
-
-        vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetSupplyCaps(address(vault), supplyCaps);
-
-        vm.prank(OWNER);
-        publicAllocator.setSupplyCaps(address(vault), supplyCaps);
-
-        uint256 cap;
-        cap = publicAllocator.supplyCap(address(vault), idleParams.id());
-        assertEq(cap, cap0);
-
-        cap = publicAllocator.supplyCap(address(vault), allMarkets[0].id());
-        assertEq(cap, cap1);
     }
 
     function testPublicReallocateEvent(uint128 flow, address sender) public {
@@ -340,86 +305,6 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     receive() external payable {}
-
-    function testInflowGoesAboveCap(uint256 cap, uint128 flow) public {
-        cap = bound(cap, 0, CAP2 - 1);
-        flow = uint128(bound(flow, cap + 1, CAP2));
-
-        supplyCaps.push(SupplyCapConfig(allMarkets[0].id(), cap));
-        vm.prank(OWNER);
-        publicAllocator.setSupplyCaps(address(vault), supplyCaps);
-
-        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, MAX_SETTABLE_FLOW_CAP)));
-        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(MAX_SETTABLE_FLOW_CAP, 0)));
-        vm.prank(OWNER);
-        publicAllocator.setFlowCaps(address(vault), flowCaps);
-
-        // Should work at cap
-        withdrawals.push(Withdrawal(idleParams, uint128(cap)));
-        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
-
-        delete withdrawals;
-
-        // Should not work above cap
-        withdrawals.push(Withdrawal(idleParams, uint128(flow - cap)));
-
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id()));
-        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
-    }
-
-    function testInflowStartsAboveCap(uint256 cap, uint128 flow) public {
-        cap = bound(cap, 0, CAP2 - 2);
-        flow = uint128(bound(flow, cap, CAP2 - 1));
-
-        // Remove flow limits
-        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, MAX_SETTABLE_FLOW_CAP)));
-        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(MAX_SETTABLE_FLOW_CAP, 0)));
-        vm.prank(OWNER);
-        publicAllocator.setFlowCaps(address(vault), flowCaps);
-
-        // Set supply above future public allocator cap
-        withdrawals.push(Withdrawal(idleParams, flow));
-        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
-
-        // Set supply in market 0 > public allocation cap
-        supplyCaps.push(SupplyCapConfig(allMarkets[0].id(), cap));
-        vm.prank(OWNER);
-        publicAllocator.setSupplyCaps(address(vault), supplyCaps);
-
-        // Increase supply even more (by 1)
-        withdrawals[0].amount = 1;
-
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.PublicAllocatorSupplyCapExceeded.selector, allMarkets[0].id()));
-        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
-    }
-
-    function testStrictOutflowStartsAboveCap(uint256 cap, uint128 flow, uint128 flow2) public {
-        cap = bound(cap, 0, CAP2 - 2);
-        flow = uint128(bound(flow, cap + 2, CAP2));
-        flow2 = uint128(bound(flow2, cap + 1, flow - 1));
-
-        // Remove flow limits
-        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, MAX_SETTABLE_FLOW_CAP)));
-        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(MAX_SETTABLE_FLOW_CAP, 0)));
-        vm.prank(OWNER);
-        publicAllocator.setFlowCaps(address(vault), flowCaps);
-
-        // Set supply above future public allocator cap
-        withdrawals.push(Withdrawal(idleParams, flow));
-        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
-
-        // Set supply in market 0 > public allocation cap
-        supplyCaps.push(SupplyCapConfig(allMarkets[0].id(), cap));
-        vm.prank(OWNER);
-        publicAllocator.setSupplyCaps(address(vault), supplyCaps);
-
-        // Strictly decrease supply
-        delete withdrawals;
-
-        withdrawals.push(Withdrawal(allMarkets[0], flow - flow2));
-
-        publicAllocator.reallocateTo(address(vault), withdrawals, idleParams);
-    }
 
     function testMaxOutNoOverflow(uint128 flow) public {
         flow = uint128(bound(flow, 1, CAP2));

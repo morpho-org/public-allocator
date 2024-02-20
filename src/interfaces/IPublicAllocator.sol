@@ -56,10 +56,6 @@ interface IPublicAllocatorBase {
     /// @notice The accrued ETH fee for a given vault.
     function accruedFee(address vault) external view returns (uint256);
 
-    /// @notice Given a market, the cap a supply through public allocation cannot exceed for a given vault.
-    /// @notice A withdraw through public allocation can start and end above the cap.
-    function supplyCap(address vault, Id) external view returns (uint256);
-
     /// @notice Reallocates from a list of markets to one market.
     /// @param vault The MetaMorpho vault to reallocate.
     /// @param withdrawals The markets to withdraw from,and the amounts to withdraw.
@@ -86,10 +82,6 @@ interface IPublicAllocatorBase {
     /// @dev Max allowed inflow/outflow is MAX_SETTABLE_FLOW_CAP.
     /// @dev Doesn't revert if it doesn't change the storage at all.
     function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external;
-
-    /// @notice Sets the supply cap of a supply through public allocation for some markets for a given vault.
-    /// @dev Doesn't revert if it doesn't change the storage at all.
-    function setSupplyCaps(address vault, SupplyCapConfig[] calldata config) external;
 }
 
 /// @title IPublicAllocator

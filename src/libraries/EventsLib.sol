@@ -25,7 +25,4 @@ library EventsLib {
 
     /// @notice Emitted when the owner updates some flow caps for a vault.
     event SetFlowCaps(address indexed vault, FlowCapsConfig[] config);
-
-    /// @notice Emitted when the owner updates some supply caps for a vault.
-    event SetSupplyCaps(address indexed vault, SupplyCapConfig[] config);
 }
