@@ -21,10 +21,10 @@ import {UtilsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/UtilsLib
 import {MarketParamsLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {MorphoBalancesLib} from "../lib/metamorpho/lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
-/// @title MetaMorpho
+/// @title PublicAllocator
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-/// @notice Publically callable allocator for a MetaMorpho vault.
+/// @notice Publicly callable allocator for MetaMorpho vaults.
 contract PublicAllocator is IPublicAllocatorStaticTyping {
     using MorphoBalancesLib for IMorpho;
     using MarketParamsLib for MarketParams;
@@ -34,49 +34,44 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /// @inheritdoc IPublicAllocatorBase
     IMorpho public immutable MORPHO;
-    /// @inheritdoc IPublicAllocatorBase
-    IMetaMorpho public immutable VAULT;
 
     /* STORAGE */
 
     /// @inheritdoc IPublicAllocatorBase
-    address public owner;
+    mapping(address => address) public owner;
     /// @inheritdoc IPublicAllocatorBase
-    uint256 public fee;
+    mapping(address => uint256) public fee;
+    /// @inheritdoc IPublicAllocatorBase
+    mapping(address => uint256) public accruedFee;
     /// @inheritdoc IPublicAllocatorStaticTyping
-    mapping(Id => FlowCaps) public flowCaps;
+    mapping(address => mapping(Id => FlowCaps)) public flowCaps;
     /// @inheritdoc IPublicAllocatorBase
-    mapping(Id => uint256) public supplyCap;
+    mapping(address => mapping(Id => uint256)) public supplyCap;
 
     /* MODIFIER */
 
-    /// @dev Reverts if the caller is not the owner.
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert ErrorsLib.NotOwner();
+    /// @dev Reverts if the caller is not the owner for this vault or the vault owner.
+    modifier onlyOwner(address vault) {
+        if (msg.sender != owner[vault] && msg.sender != IMetaMorpho(vault).owner()) revert ErrorsLib.NotOwner();
         _;
     }
 
     /* CONSTRUCTOR */
 
     /// @dev Initializes the contract.
-    /// @param newOwner The owner of the contract.
-    /// @param vault The address of the MetaMorpho vault.
-    constructor(address newOwner, address vault) {
-        if (newOwner == address(0)) revert ErrorsLib.ZeroAddress();
-        if (vault == address(0)) revert ErrorsLib.ZeroAddress();
-        owner = newOwner;
-        VAULT = IMetaMorpho(vault);
-        MORPHO = VAULT.MORPHO();
+    constructor(address morpho) {
+        MORPHO = IMorpho(morpho);
     }
 
     /* PUBLIC */
 
     /// @inheritdoc IPublicAllocatorBase
-    function reallocateTo(Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
+    function reallocateTo(address vault, Withdrawal[] calldata withdrawals, MarketParams calldata supplyMarketParams)
         external
         payable
     {
-        if (msg.value != fee) revert ErrorsLib.IncorrectFee();
+        if (msg.value != fee[vault]) revert ErrorsLib.IncorrectFee();
+        if (msg.value > 0) accruedFee[vault] += msg.value;
 
         MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
         Id supplyMarketId = supplyMarketParams.id();
@@ -91,79 +86,80 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.DepositMarketInWithdrawals();
 
             MORPHO.accrueInterest(withdrawals[i].marketParams);
-            uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(VAULT));
+            uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(vault));
             uint128 withdrawnAssets = withdrawals[i].amount;
 
-            if (flowCaps[id].maxOut < withdrawnAssets) revert ErrorsLib.MaxOutflowExceeded(id);
+            if (flowCaps[vault][id].maxOut < withdrawnAssets) revert ErrorsLib.MaxOutflowExceeded(id);
             if (assets < withdrawnAssets) revert ErrorsLib.NotEnoughSupply(id);
 
-            flowCaps[id].maxIn += withdrawnAssets;
-            flowCaps[id].maxOut -= withdrawnAssets;
+            flowCaps[vault][id].maxIn += withdrawnAssets;
+            flowCaps[vault][id].maxOut -= withdrawnAssets;
             allocations[i].marketParams = withdrawals[i].marketParams;
             allocations[i].assets = assets - withdrawnAssets;
 
             totalWithdrawn += withdrawnAssets;
 
-            emit EventsLib.PublicWithdrawal(id, withdrawnAssets);
+            emit EventsLib.PublicWithdrawal(vault, id, withdrawnAssets);
         }
 
-        if (flowCaps[supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
+        if (flowCaps[vault][supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
 
-        flowCaps[supplyMarketId].maxIn -= totalWithdrawn;
-        flowCaps[supplyMarketId].maxOut += totalWithdrawn;
+        flowCaps[vault][supplyMarketId].maxIn -= totalWithdrawn;
+        flowCaps[vault][supplyMarketId].maxOut += totalWithdrawn;
         allocations[withdrawals.length].marketParams = supplyMarketParams;
         allocations[withdrawals.length].assets = type(uint256).max;
 
-        VAULT.reallocate(allocations);
+        IMetaMorpho(vault).reallocate(allocations);
 
-        if (MORPHO.expectedSupplyAssets(supplyMarketParams, address(VAULT)) > supplyCap[supplyMarketId]) {
+        if (MORPHO.expectedSupplyAssets(supplyMarketParams, vault) > supplyCap[vault][supplyMarketId]) {
             revert ErrorsLib.PublicAllocatorSupplyCapExceeded(supplyMarketId);
         }
 
-        emit EventsLib.PublicReallocateTo(msg.sender, supplyMarketId, totalWithdrawn);
+        emit EventsLib.PublicReallocateTo(msg.sender, vault, supplyMarketId, totalWithdrawn);
     }
 
     /* OWNER ONLY */
 
     /// @inheritdoc IPublicAllocatorBase
-    function setOwner(address newOwner) external onlyOwner {
-        if (owner == newOwner) revert ErrorsLib.AlreadySet();
-        owner = newOwner;
-        emit EventsLib.SetOwner(newOwner);
+    function setOwner(address vault, address newOwner) external onlyOwner(vault) {
+        if (owner[vault] == newOwner) revert ErrorsLib.AlreadySet();
+        owner[vault] = newOwner;
+        emit EventsLib.SetOwner(vault, newOwner);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFee(uint256 newFee) external onlyOwner {
-        if (fee == newFee) revert ErrorsLib.AlreadySet();
-        fee = newFee;
-        emit EventsLib.SetFee(newFee);
+    function setFee(address vault, uint256 newFee) external onlyOwner(vault) {
+        if (fee[vault] == newFee) revert ErrorsLib.AlreadySet();
+        fee[vault] = newFee;
+        emit EventsLib.SetFee(vault, newFee);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function transferFee(address payable feeRecipient) external onlyOwner {
-        uint256 balance = address(this).balance;
-        feeRecipient.transfer(balance);
-        emit EventsLib.TransferFee(balance, feeRecipient);
+    function transferFee(address vault, address payable feeRecipient) external onlyOwner(vault) {
+        uint256 claimed = accruedFee[vault];
+        accruedFee[vault] = 0;
+        feeRecipient.transfer(claimed);
+        emit EventsLib.TransferFee(vault, claimed, feeRecipient);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFlowCaps(FlowCapsConfig[] calldata config) external onlyOwner {
+    function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external onlyOwner(vault) {
         for (uint256 i = 0; i < config.length; i++) {
             if (config[i].caps.maxIn > MAX_SETTABLE_FLOW_CAP || config[i].caps.maxOut > MAX_SETTABLE_FLOW_CAP) {
                 revert ErrorsLib.MaxSettableFlowCapExceeded();
             }
-            flowCaps[config[i].id] = config[i].caps;
+            flowCaps[vault][config[i].id] = config[i].caps;
         }
 
-        emit EventsLib.SetFlowCaps(config);
+        emit EventsLib.SetFlowCaps(vault, config);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setSupplyCaps(SupplyCapConfig[] calldata config) external onlyOwner {
+    function setSupplyCaps(address vault, SupplyCapConfig[] calldata config) external onlyOwner(vault) {
         for (uint256 i = 0; i < config.length; i++) {
-            supplyCap[config[i].id] = config[i].cap;
+            supplyCap[vault][config[i].id] = config[i].cap;
         }
 
-        emit EventsLib.SetSupplyCaps(config);
+        emit EventsLib.SetSupplyCaps(vault, config);
     }
 }
