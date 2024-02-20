@@ -30,8 +30,7 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          yarn --cwd lib/metamorpho build:forge
-          forge build --sizes
+          forge build --sizes --skip Import
         id: build
 
       - name: Run Forge tests
