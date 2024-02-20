@@ -32,9 +32,6 @@ struct Withdrawal {
     uint128 amount;
 }
 
-/// @title IPublicAllocator
-/// @author Morpho Labs
-/// @custom:contact security@morpho.org
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorBase {
@@ -79,9 +76,6 @@ interface IPublicAllocatorBase {
     function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external;
 }
 
-/// @title IPublicAllocator
-/// @author Morpho Labs
-/// @custom:contact security@morpho.org
 /// @dev This interface is inherited by PublicAllocator so that function signatures are checked by the compiler.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
