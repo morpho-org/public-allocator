@@ -25,11 +25,6 @@ struct FlowCapsConfig {
     FlowCaps caps;
 }
 
-struct SupplyCapConfig {
-    Id id;
-    uint256 cap;
-}
-
 struct Withdrawal {
     /// @notice The market from which to withdraw.
     MarketParams marketParams;

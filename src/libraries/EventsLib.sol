@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
-import {FlowCapsConfig, SupplyCapConfig, Id} from "../interfaces/IPublicAllocator.sol";
+import {FlowCapsConfig, Id} from "../interfaces/IPublicAllocator.sol";
 
 /// @title EventsLib
 /// @author Morpho Labs

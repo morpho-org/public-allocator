@@ -4,7 +4,6 @@ pragma solidity 0.8.24;
 import {
     FlowCaps,
     FlowCapsConfig,
-    SupplyCapConfig,
     Withdrawal,
     MAX_SETTABLE_FLOW_CAP,
     IPublicAllocatorStaticTyping,
