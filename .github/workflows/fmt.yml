@@ -1,4 +1,4 @@
-name: test
+name: forge fmt
 
 on:
   workflow_dispatch:
