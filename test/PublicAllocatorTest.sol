@@ -120,6 +120,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testConfigureFlowAccessFail(address sender) public {
         vm.assume(sender != OWNER);
+        vm.assume(sender != address(0));
 
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 0)));
 
@@ -130,6 +131,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testTransferFeeAccessFail(address sender, address payable recipient) public {
         vm.assume(sender != OWNER);
+        vm.assume(sender != address(0));
         vm.prank(sender);
         vm.expectRevert(ErrorsLib.NotOwner.selector);
         publicAllocator.transferFee(address(vault), recipient);
@@ -137,6 +139,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testSetFeeAccessFail(address sender, uint256 fee) public {
         vm.assume(sender != OWNER);
+        vm.assume(sender != address(0));
         vm.prank(sender);
         vm.expectRevert(ErrorsLib.NotOwner.selector);
         publicAllocator.setFee(address(vault), fee);
@@ -144,6 +147,7 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testSetCapAccessFail(address sender, Id id, uint256 cap) public {
         vm.assume(sender != OWNER);
+        vm.assume(sender != address(0));
         vm.prank(sender);
         vm.expectRevert(ErrorsLib.NotOwner.selector);
         supplyCaps.push(SupplyCapConfig(id, cap));
