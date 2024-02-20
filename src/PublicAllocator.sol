@@ -77,7 +77,6 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         emit EventsLib.SetFee(vault, newFee);
     }
 
-
     /// @inheritdoc IPublicAllocatorBase
     function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external onlyOwner(vault) {
         for (uint256 i = 0; i < config.length; i++) {
