@@ -9,9 +9,8 @@ import {
     IPublicAllocatorStaticTyping,
     IPublicAllocatorBase
 } from "./interfaces/IPublicAllocator.sol";
-import {
-    Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
-} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {IMetaMorpho, MarketAllocation} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
+import {IMorpho, MarketParams, Id} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
