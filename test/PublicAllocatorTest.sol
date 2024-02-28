@@ -141,7 +141,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(fee != publicAllocator.fee(address(vault)));
         vm.prank(OWNER);
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFee(address(vault), fee);
+        emit EventsLib.SetFee(OWNER, address(vault), fee);
         publicAllocator.setFee(address(vault), fee);
         assertEq(publicAllocator.fee(address(vault)), fee);
     }
@@ -165,7 +165,7 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(in1, out1)));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFlowCaps(address(vault), flowCaps);
+        emit EventsLib.SetFlowCaps(OWNER, address(vault), flowCaps);
 
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
@@ -202,9 +202,9 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals.push(Withdrawal(allMarkets[1], flow));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.PublicWithdrawal(address(vault), idleParams.id(), flow);
-        emit EventsLib.PublicWithdrawal(address(vault), allMarkets[1].id(), flow);
-        emit EventsLib.PublicReallocateTo(address(vault), sender, allMarkets[0].id(), 2 * flow);
+        emit EventsLib.PublicWithdrawal(sender, address(vault), idleParams.id(), flow);
+        emit EventsLib.PublicWithdrawal(sender, address(vault), allMarkets[1].id(), flow);
+        emit EventsLib.PublicReallocateTo(sender, address(vault), allMarkets[0].id(), 2 * flow);
 
         vm.prank(sender);
         publicAllocator.reallocateTo(address(vault), withdrawals.sort(), allMarkets[0]);
@@ -380,7 +380,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testMaxFlowCapValue() public {
-        assertEq(MAX_SETTABLE_FLOW_CAP, type(uint128).max / 2);
+        assertEq(MAX_SETTABLE_FLOW_CAP, 170141183460469231731687303715884105727);
     }
 
     function testMaxFlowCapLimit(uint128 cap) public {
