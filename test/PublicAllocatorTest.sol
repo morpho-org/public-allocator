@@ -379,6 +379,24 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.reallocateTo(address(vault), withdrawals, idleParams);
     }
 
+    function testReallocateMarketNotEnabledWithdrawn(MarketParams memory marketParams) public {
+        vm.assume(!vault.config(marketParams.id()).enabled);
+
+        withdrawals.push(Withdrawal(marketParams, 1e18));
+
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MarketNotEnabled.selector, marketParams.id()));
+        publicAllocator.reallocateTo(address(vault), withdrawals, idleParams);
+    }
+
+    function testReallocateMarketNotEnabledSupply(MarketParams memory marketParams) public {
+        vm.assume(!vault.config(marketParams.id()).enabled);
+
+        withdrawals.push(Withdrawal(idleParams, 1e18));
+
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MarketNotEnabled.selector, marketParams.id()));
+        publicAllocator.reallocateTo(address(vault), withdrawals, marketParams);
+    }
+
     function testMaxFlowCapValue() public {
         assertEq(MAX_SETTABLE_FLOW_CAP, type(uint128).max / 2);
     }
