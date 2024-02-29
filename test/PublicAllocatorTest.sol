@@ -164,6 +164,18 @@ contract PublicAllocatorTest is IntegrationTest {
         assertEq(publicAllocator.fee(address(vault)), fee);
     }
 
+    function testSetFeeByAdmin(uint256 fee, address sender) public {
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        vm.assume(fee != publicAllocator.fee(address(vault)));
+        vm.prank(OWNER);
+        publicAllocator.setAdmin(address(vault), sender);
+        vm.prank(sender);
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFee(address(vault), fee);
+        publicAllocator.setFee(address(vault), fee);
+        assertEq(publicAllocator.fee(address(vault)), fee);
+    }
+
     function testSetFeeAlreadySet(uint256 fee) public {
         vm.assume(fee != publicAllocator.fee(address(vault)));
         vm.prank(OWNER);
@@ -186,6 +198,35 @@ contract PublicAllocatorTest is IntegrationTest {
         emit EventsLib.SetFlowCaps(address(vault), flowCaps);
 
         vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+
+        FlowCaps memory flowCap;
+        flowCap = publicAllocator.flowCaps(address(vault), idleParams.id());
+        assertEq(flowCap.maxIn, in0);
+        assertEq(flowCap.maxOut, out0);
+
+        flowCap = publicAllocator.flowCaps(address(vault), allMarkets[0].id());
+        assertEq(flowCap.maxIn, in1);
+        assertEq(flowCap.maxOut, out1);
+    }
+
+    function testSetFlowCapsByAdmin(uint128 in0, uint128 out0, uint128 in1, uint128 out1, address sender) public {
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        in0 = uint128(bound(in0, 0, MAX_SETTABLE_FLOW_CAP));
+        out0 = uint128(bound(out0, 0, MAX_SETTABLE_FLOW_CAP));
+        in1 = uint128(bound(in1, 0, MAX_SETTABLE_FLOW_CAP));
+        out1 = uint128(bound(out1, 0, MAX_SETTABLE_FLOW_CAP));
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(in0, out0)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(in1, out1)));
+
+        vm.prank(OWNER);
+        publicAllocator.setAdmin(address(vault), sender);
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFlowCaps(address(vault), flowCaps);
+
+        vm.prank(sender);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
 
         FlowCaps memory flowCap;
@@ -300,6 +341,24 @@ contract PublicAllocatorTest is IntegrationTest {
         uint256 before = address(this).balance;
 
         vm.prank(OWNER);
+        publicAllocator.transferFee(address(vault), payable(address(this)));
+
+        assertEq(address(this).balance - before, 2 * 0.001 ether, "wrong fee transferred");
+    }
+
+    function testTransferFeeByAdminSuccess(address sender) public {
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        vm.prank(OWNER);
+        publicAllocator.setAdmin(address(vault), sender);
+        vm.prank(sender);
+        publicAllocator.setFee(address(vault), 0.001 ether);
+
+        publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
+        publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
+
+        uint256 before = address(this).balance;
+
+        vm.prank(sender);
         publicAllocator.transferFee(address(vault), payable(address(this)));
 
         assertEq(address(this).balance - before, 2 * 0.001 ether, "wrong fee transferred");
