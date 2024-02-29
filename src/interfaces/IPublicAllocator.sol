@@ -9,7 +9,7 @@ import {
     MarketParams
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
-/// @dev Max settable flow cap, such that they can always be stored on 128 bits.
+/// @dev Max settable flow cap, such that caps can always be stored on 128 bits.
 /// @dev The actual max possible flow cap is type(uint128).max-1.
 /// @dev Equals to 170141183460469231731687303715884105727;
 uint128 constant MAX_SETTABLE_FLOW_CAP = type(uint128).max / 2;
