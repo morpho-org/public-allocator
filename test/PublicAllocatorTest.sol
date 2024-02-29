@@ -400,6 +400,29 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setFlowCaps(address(vault), flowCaps);
     }
 
+    function testSetFlowCapsMarketNotEnabled(Id id, uint128 maxIn, uint128 maxOut) public {
+        vm.assume(!vault.config(id).enabled);
+        vm.assume(maxIn != 0 || maxOut != 0);
+
+        flowCaps.push(FlowCapsConfig(id, FlowCaps(maxIn, maxOut)));
+
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MarketNotEnabled.selector, id));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+    }
+
+    function testSetFlowCapsToZeroForMarketNotEnabled(Id id) public {
+        vm.assume(!vault.config(id).enabled);
+
+        flowCaps.push(FlowCapsConfig(id, FlowCaps(0, 0)));
+
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+
+        assertEq(publicAllocator.flowCaps(address(vault), id).maxIn, 0);
+        assertEq(publicAllocator.flowCaps(address(vault), id).maxOut, 0);
+    }
+
     function testNotEnoughSupply() public {
         uint128 flow = 1e18;
         // Set flow limits with withdraw market's maxIn to max
