@@ -73,20 +73,20 @@ contract PublicAllocatorTest is IntegrationTest {
         _sortSupplyQueueIdleLast();
     }
 
-    function testOwner() public {
-        assertEq(publicAllocator.owner(address(vault)), address(0));
+    function testAdmin() public {
+        assertEq(publicAllocator.admin(address(vault)), address(0));
     }
 
-    function testSetOwner() public {
+    function testSetAdmin() public {
         vm.prank(OWNER);
-        publicAllocator.setOwner(address(vault), address(1));
-        assertEq(publicAllocator.owner(address(vault)), address(1));
+        publicAllocator.setAdmin(address(vault), address(1));
+        assertEq(publicAllocator.admin(address(vault)), address(1));
     }
 
-    function testSetOwnerFail() public {
+    function testSetAdminFail() public {
         vm.expectRevert(ErrorsLib.AlreadySet.selector);
         vm.prank(OWNER);
-        publicAllocator.setOwner(address(vault), address(0));
+        publicAllocator.setAdmin(address(vault), address(0));
     }
 
     function testReallocateCapZeroOutflowByDefault(uint128 flow) public {
@@ -117,7 +117,7 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 0)));
 
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotOwner.selector);
+        vm.expectRevert(ErrorsLib.NotAdmin.selector);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
     }
 
@@ -125,7 +125,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.assume(sender != address(0));
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotOwner.selector);
+        vm.expectRevert(ErrorsLib.NotAdmin.selector);
         publicAllocator.transferFee(address(vault), recipient);
     }
 
@@ -133,7 +133,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.assume(sender != address(0));
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotOwner.selector);
+        vm.expectRevert(ErrorsLib.NotAdmin.selector);
         publicAllocator.setFee(address(vault), fee);
     }
 

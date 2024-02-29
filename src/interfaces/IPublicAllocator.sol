@@ -38,9 +38,9 @@ interface IPublicAllocatorBase {
     /// @notice The address of the Morpho contract.
     function MORPHO() external view returns (IMorpho);
 
-    /// @notice The address of the owner of the public allocator config for a given vault.
-    /// @dev The owner of the underlying vault always has the public allocator owner capabilities.
-    function owner(address vault) external view returns (address);
+    /// @notice The address of the admin of the public allocator config for a given vault.
+    /// @dev The owner of the underlying vault always has the public allocator admin capabilities.
+    function admin(address vault) external view returns (address);
 
     /// @notice The current ETH fee for a given vault.
     function fee(address vault) external view returns (uint256);
@@ -61,8 +61,8 @@ interface IPublicAllocatorBase {
         external
         payable;
 
-    /// @notice Sets the owner for a given vault.
-    function setOwner(address vault, address newOwner) external;
+    /// @notice Sets the a for a given vault.
+    function setAdmin(address vault, address newAdmin) external;
 
     /// @notice Sets the fee for a given vault.
     function setFee(address vault, uint256 newFee) external;

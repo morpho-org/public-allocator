@@ -8,8 +8,8 @@ import {Id} from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 /// @custom:contact security@morpho.org
 /// @notice Library exposing error messages.
 library ErrorsLib {
-    /// @notice Thrown when the `msg.sender` is not the `owner`.
-    error NotOwner();
+    /// @notice Thrown when the `msg.sender` is not admin of the public allocator for the vault.
+    error NotAdmin();
 
     /// @notice Thrown when the reallocation fee given is wrong.
     error IncorrectFee();
