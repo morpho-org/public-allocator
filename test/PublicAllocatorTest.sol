@@ -104,7 +104,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(publicAllocator.admin(address(vault)) != sender);
         vm.assume(publicAllocator.admin(address(vault)) != newAdmin);
 
-        vm.expectRevert(ErrorsLib.NotAdmin.selector);
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
         vm.prank(sender);
         publicAllocator.setAdmin(address(vault), newAdmin);
     }
@@ -137,7 +137,7 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 0)));
 
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotAdmin.selector);
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
     }
 
@@ -145,7 +145,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.assume(publicAllocator.admin(address(vault)) != sender);
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotAdmin.selector);
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
         publicAllocator.transferFee(address(vault), recipient);
     }
 
@@ -153,7 +153,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.assume(publicAllocator.admin(address(vault)) != sender);
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotAdmin.selector);
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
         publicAllocator.setFee(address(vault), fee);
     }
 
