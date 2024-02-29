@@ -60,7 +60,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         MORPHO = IMorpho(morpho);
     }
 
-    /* ADMIN ONLY */
+    /* ADMIN OR VAULT OWNER ONLY */
 
     /// @inheritdoc IPublicAllocatorBase
     function setAdmin(address vault, address newAdmin) external onlyAdminOrVaultOwner(vault) {
