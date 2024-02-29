@@ -87,7 +87,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(publicAllocator.admin(address(vault)) != sender);
         vm.assume(sender != newAdmin);
         vm.prank(OWNER);
-        publicAllocator.setAdmin(address(vault),sender);
+        publicAllocator.setAdmin(address(vault), sender);
         vm.prank(sender);
         publicAllocator.setAdmin(address(vault), newAdmin);
         assertEq(publicAllocator.admin(address(vault)), newAdmin);
@@ -221,7 +221,7 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(in1, out1)));
 
         vm.prank(OWNER);
-        publicAllocator.setAdmin(address(vault),sender);
+        publicAllocator.setAdmin(address(vault), sender);
 
         vm.expectEmit(address(publicAllocator));
         emit EventsLib.SetFlowCaps(address(vault), flowCaps);
@@ -349,7 +349,7 @@ contract PublicAllocatorTest is IntegrationTest {
     function testTransferFeeByAdminSuccess(address sender) public {
         vm.assume(publicAllocator.admin(address(vault)) != sender);
         vm.prank(OWNER);
-        publicAllocator.setAdmin(address(vault),sender);
+        publicAllocator.setAdmin(address(vault), sender);
         vm.prank(sender);
         publicAllocator.setFee(address(vault), 0.001 ether);
 
