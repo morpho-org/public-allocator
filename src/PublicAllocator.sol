@@ -47,9 +47,9 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /* MODIFIER */
 
-    /// @dev Reverts if the caller is not admin of this vault.
-    modifier onlyAdmin(address vault) {
-        if (msg.sender != admin[vault] && msg.sender != IMetaMorpho(vault).owner()) revert ErrorsLib.NotAdmin();
+    /// @dev Reverts if the caller is not the admin not the owner of this vault.
+    modifier onlyAdminOrVaultOwner(address vault) {
+        if (msg.sender != admin[vault] && msg.sender != IMetaMorpho(vault).owner()) revert ErrorsLib.NotAdminNorVaultOwner();
         _;
     }
 
@@ -63,21 +63,21 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /* ADMIN ONLY */
 
     /// @inheritdoc IPublicAllocatorBase
-    function setAdmin(address vault, address newAdmin) external onlyAdmin(vault) {
+    function setAdmin(address vault, address newAdmin) external onlyAdminOrVaultOwner(vault) {
         if (admin[vault] == newAdmin) revert ErrorsLib.AlreadySet();
         admin[vault] = newAdmin;
         emit EventsLib.SetAdmin(vault, newAdmin);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFee(address vault, uint256 newFee) external onlyAdmin(vault) {
+    function setFee(address vault, uint256 newFee) external onlyAdminOrVaultOwner(vault) {
         if (fee[vault] == newFee) revert ErrorsLib.AlreadySet();
         fee[vault] = newFee;
         emit EventsLib.SetFee(vault, newFee);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external onlyAdmin(vault) {
+    function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external onlyAdminOrVaultOwner(vault) {
         for (uint256 i = 0; i < config.length; i++) {
             if (config[i].caps.maxIn > MAX_SETTABLE_FLOW_CAP || config[i].caps.maxOut > MAX_SETTABLE_FLOW_CAP) {
                 revert ErrorsLib.MaxSettableFlowCapExceeded();
@@ -89,7 +89,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function transferFee(address vault, address payable feeRecipient) external onlyAdmin(vault) {
+    function transferFee(address vault, address payable feeRecipient) external onlyAdminOrVaultOwner(vault) {
         uint256 claimed = accruedFee[vault];
         accruedFee[vault] = 0;
         feeRecipient.transfer(claimed);

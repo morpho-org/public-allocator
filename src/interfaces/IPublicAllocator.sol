@@ -35,11 +35,10 @@ struct Withdrawal {
 /// @dev This interface is used for factorizing IPublicAllocatorStaticTyping and IPublicAllocator.
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorBase {
-    /// @notice The address of the Morpho contract.
+    /// @notice The Morpho contract.
     function MORPHO() external view returns (IMorpho);
 
-    /// @notice The address of the admin of the public allocator config for a given vault.
-    /// @dev The owner of the underlying vault always has the public allocator admin capabilities.
+    /// @notice The admin for a given vault.
     function admin(address vault) external view returns (address);
 
     /// @notice The current ETH fee for a given vault.
@@ -61,7 +60,7 @@ interface IPublicAllocatorBase {
         external
         payable;
 
-    /// @notice Sets the a for a given vault.
+    /// @notice Sets the admin for a given vault.
     function setAdmin(address vault, address newAdmin) external;
 
     /// @notice Sets the fee for a given vault.
