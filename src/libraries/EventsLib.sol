@@ -14,7 +14,7 @@ library EventsLib {
     /// @notice Emitted at the end of a public reallocation.
     event PublicReallocateTo(address indexed vault, address sender, Id supplyMarketId, uint256 suppliedAssets);
 
-    /// @notice Emitted when the admin is set for a vault.
+    /// @notice Emitted when an admin is set for a vault.
     event SetAdmin(address indexed vault, address admin);
 
     /// @notice Emitted when the fee is set for a vault.
