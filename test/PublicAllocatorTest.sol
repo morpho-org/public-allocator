@@ -99,12 +99,14 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setAdmin(address(vault), address(0));
     }
 
-    function testSetAdminFail(address sender) public {
+    function testSetAdminAccessFail(address sender, address newAdmin) public {
         vm.assume(sender != OWNER);
         vm.assume(publicAllocator.admin(address(vault)) != sender);
-        vm.expectRevert(ErrorsLib.AlreadySet.selector);
-        vm.prank(OWNER);
-        publicAllocator.setAdmin(address(vault), address(0));
+        vm.assume(publicAllocator.admin(address(vault)) != newAdmin);
+
+        vm.expectRevert(ErrorsLib.NotAdmin.selector);
+        vm.prank(sender);
+        publicAllocator.setAdmin(address(vault), newAdmin);
     }
 
     function testReallocateCapZeroOutflowByDefault(uint128 flow) public {
