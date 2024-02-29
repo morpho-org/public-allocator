@@ -12,7 +12,9 @@ library EventsLib {
     event PublicWithdrawal(address indexed sender, address indexed vault, Id indexed id, uint256 withdrawnAssets);
 
     /// @notice Emitted at the end of a public reallocation.
-    event PublicReallocateTo(address indexed sender, address indexed vault, Id indexed supplyMarketId, uint256 suppliedAssets);
+    event PublicReallocateTo(
+        address indexed sender, address indexed vault, Id indexed supplyMarketId, uint256 suppliedAssets
+    );
 
     /// @notice Emitted when the owner is set for a vault.
     event SetOwner(address indexed sender, address indexed vault, address indexed owner);
