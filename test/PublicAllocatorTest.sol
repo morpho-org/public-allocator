@@ -333,7 +333,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testReallocationReallocates(uint128 flow) public {
-        flow = uint128(bound(flow, 0, CAP2));
+        flow = uint128(bound(flow, 1, CAP2));
 
         // Set flow limits
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
@@ -395,6 +395,13 @@ contract PublicAllocatorTest is IntegrationTest {
 
         vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MarketNotEnabled.selector, marketParams.id()));
         publicAllocator.reallocateTo(address(vault), withdrawals, marketParams);
+    }
+
+    function testReallocateWithdrawZero() public {
+        withdrawals.push(Withdrawal(idleParams, 0));
+
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.WithdrawZero.selector, idleParams.id()));
+        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
     }
 
     function testMaxFlowCapValue() public {
