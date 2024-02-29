@@ -17,12 +17,12 @@ library EventsLib {
     /// @notice Emitted when the admin is set for a vault.
     event SetAdmin(address indexed vault, address admin);
 
-    /// @notice Emitted when the admin changes the `fee` for a vault.
+    /// @notice Emitted when the fee is set for a vault.
     event SetFee(address indexed vault, uint256 fee);
 
-    /// @notice Emitted when the admin transfers the fee for a vault.
+    /// @notice Emitted when the fee is transfered for a vault.
     event TransferFee(address indexed vault, uint256 amount, address indexed feeRecipient);
 
-    /// @notice Emitted when the admin updates some flow caps for a vault.
+    /// @notice Emitted when the flow caps are set for a vault.
     event SetFlowCaps(address indexed vault, FlowCapsConfig[] config);
 }
