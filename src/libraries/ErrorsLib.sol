@@ -23,7 +23,7 @@ library ErrorsLib {
     /// @notice Thrown when the deposit market is in `withdrawals`.
     error DepositMarketInWithdrawals();
 
-    /// @notice Thrown when attempting to set max inflow/outflow to non zero values for a not enabled market.
+    /// @notice Thrown when attempting to set max inflow/outflow to non zero values for a non-enabled market.
     error MarketNotEnabled(Id id);
 
     /// @notice Thrown when attempting to set max inflow/outflow above the MAX_SETTABLE_FLOW_CAP.
