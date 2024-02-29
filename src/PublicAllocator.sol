@@ -47,7 +47,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /* MODIFIER */
 
-    /// @dev Reverts if the caller is not the admin for this vault or the vault owner.
+    /// @dev Reverts if the caller is not admin of this vault.
     modifier onlyAdmin(address vault) {
         if (msg.sender != admin[vault] && msg.sender != IMetaMorpho(vault).owner()) revert ErrorsLib.NotAdmin();
         _;
