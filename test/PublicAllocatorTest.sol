@@ -132,7 +132,6 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(sender != OWNER);
         vm.assume(publicAllocator.admin(address(vault)) != sender);
 
-
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 0)));
 
         vm.prank(sender);
