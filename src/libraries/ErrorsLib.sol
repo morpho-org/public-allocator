@@ -17,6 +17,9 @@ library ErrorsLib {
     /// @notice Thrown when the value is already set.
     error AlreadySet();
 
+    /// @notice Thrown when `withdrawals` is empty.
+    error EmptyWithdrawals();
+
     /// @notice Thrown when `withdrawals` contains a duplicate or is not sorted.
     error InconsistentWithdrawals();
 

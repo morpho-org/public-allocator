@@ -256,6 +256,12 @@ contract PublicAllocatorTest is IntegrationTest {
 
         vm.deal(address(this), requiredFee);
 
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 1 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(1 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
+
         publicAllocator.reallocateTo{value: requiredFee}(address(vault), withdrawals, allMarkets[0]);
     }
 
@@ -268,13 +274,18 @@ contract PublicAllocatorTest is IntegrationTest {
 
         vm.deal(address(this), givenFee);
         vm.expectRevert(ErrorsLib.IncorrectFee.selector);
-
         publicAllocator.reallocateTo{value: givenFee}(address(vault), withdrawals, allMarkets[0]);
     }
 
     function testTransferFeeSuccess() public {
         vm.prank(OWNER);
         publicAllocator.setFee(address(vault), 0.001 ether);
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 2 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(2 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
 
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
@@ -290,6 +301,12 @@ contract PublicAllocatorTest is IntegrationTest {
     function testTransferFeeFail() public {
         vm.prank(OWNER);
         publicAllocator.setFee(address(vault), 0.001 ether);
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 1 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(1 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
 
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
 
@@ -401,6 +418,11 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals.push(Withdrawal(idleParams, 0));
 
         vm.expectRevert(abi.encodeWithSelector(ErrorsLib.WithdrawZero.selector, idleParams.id()));
+        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
+    }
+
+    function testReallocateEmptyWithdrawals() public {
+        vm.expectRevert(ErrorsLib.EmptyWithdrawals.selector);
         publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
     }
 

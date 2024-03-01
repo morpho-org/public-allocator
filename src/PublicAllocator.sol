@@ -106,6 +106,8 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         if (msg.value != fee[vault]) revert ErrorsLib.IncorrectFee();
         if (msg.value > 0) accruedFee[vault] += msg.value;
 
+        if (withdrawals.length == 0) revert ErrorsLib.EmptyWithdrawals();
+
         Id supplyMarketId = supplyMarketParams.id();
         if (!IMetaMorpho(vault).config(supplyMarketId).enabled) revert ErrorsLib.MarketNotEnabled(supplyMarketId);
 
@@ -117,8 +119,8 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         for (uint256 i = 0; i < withdrawals.length; i++) {
             prevId = id;
             id = withdrawals[i].marketParams.id();
-            uint128 withdrawnAssets = withdrawals[i].amount;
             if (!IMetaMorpho(vault).config(id).enabled) revert ErrorsLib.MarketNotEnabled(id);
+            uint128 withdrawnAssets = withdrawals[i].amount;
             if (withdrawnAssets == 0) revert ErrorsLib.WithdrawZero(id);
 
             if (Id.unwrap(id) <= Id.unwrap(prevId)) revert ErrorsLib.InconsistentWithdrawals();
