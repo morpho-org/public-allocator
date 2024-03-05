@@ -37,7 +37,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /* STORAGE */
 
     /// @inheritdoc IPublicAllocatorBase
-    mapping(address => address) public owner;
+    mapping(address => address) public admin;
     /// @inheritdoc IPublicAllocatorBase
     mapping(address => uint256) public fee;
     /// @inheritdoc IPublicAllocatorBase
@@ -47,9 +47,11 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
     /* MODIFIER */
 
-    /// @dev Reverts if the caller is not the owner for this vault or the vault owner.
-    modifier onlyOwner(address vault) {
-        if (msg.sender != owner[vault] && msg.sender != IMetaMorpho(vault).owner()) revert ErrorsLib.NotOwner();
+    /// @dev Reverts if the caller is not the admin nor the owner of this vault.
+    modifier onlyAdminOrVaultOwner(address vault) {
+        if (msg.sender != admin[vault] && msg.sender != IMetaMorpho(vault).owner()) {
+            revert ErrorsLib.NotAdminNorVaultOwner();
+        }
         _;
     }
 
@@ -60,24 +62,24 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         MORPHO = IMorpho(morpho);
     }
 
-    /* OWNER ONLY */
+    /* ADMIN OR VAULT OWNER ONLY */
 
     /// @inheritdoc IPublicAllocatorBase
-    function setOwner(address vault, address newOwner) external onlyOwner(vault) {
-        if (owner[vault] == newOwner) revert ErrorsLib.AlreadySet();
-        owner[vault] = newOwner;
-        emit EventsLib.SetOwner(msg.sender, vault, newOwner);
+    function setAdmin(address vault, address newAdmin) external onlyAdminOrVaultOwner(vault) {
+        if (admin[vault] == newAdmin) revert ErrorsLib.AlreadySet();
+        admin[vault] = newAdmin;
+        emit EventsLib.SetAdmin(msg.sender, vault, newAdmin);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFee(address vault, uint256 newFee) external onlyOwner(vault) {
+    function setFee(address vault, uint256 newFee) external onlyAdminOrVaultOwner(vault) {
         if (fee[vault] == newFee) revert ErrorsLib.AlreadySet();
         fee[vault] = newFee;
         emit EventsLib.SetFee(msg.sender, vault, newFee);
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external onlyOwner(vault) {
+    function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external onlyAdminOrVaultOwner(vault) {
         for (uint256 i = 0; i < config.length; i++) {
             if (config[i].caps.maxIn > MAX_SETTABLE_FLOW_CAP || config[i].caps.maxOut > MAX_SETTABLE_FLOW_CAP) {
                 revert ErrorsLib.MaxSettableFlowCapExceeded();
@@ -89,7 +91,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     }
 
     /// @inheritdoc IPublicAllocatorBase
-    function transferFee(address vault, address payable feeRecipient) external onlyOwner(vault) {
+    function transferFee(address vault, address payable feeRecipient) external onlyAdminOrVaultOwner(vault) {
         uint256 claimed = accruedFee[vault];
         accruedFee[vault] = 0;
         feeRecipient.transfer(claimed);

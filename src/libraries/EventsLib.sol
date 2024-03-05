@@ -16,15 +16,15 @@ library EventsLib {
         address indexed sender, address indexed vault, Id indexed supplyMarketId, uint256 suppliedAssets
     );
 
-    /// @notice Emitted when the owner is set for a vault.
-    event SetOwner(address indexed sender, address indexed vault, address indexed owner);
+    /// @notice Emitted when the admin is set for a vault.
+    event SetAdmin(address indexed sender, address indexed vault, address admin);
 
-    /// @notice Emitted when the owner changes the `fee` for a vault.
+    /// @notice Emitted when the fee is set for a vault.
     event SetFee(address indexed sender, address indexed vault, uint256 fee);
 
-    /// @notice Emitted when the owner transfers the fee for a vault.
+    /// @notice Emitted when the fee is transfered for a vault.
     event TransferFee(address indexed sender, address indexed vault, uint256 amount, address indexed feeRecipient);
 
-    /// @notice Emitted when the owner updates some flow caps for a vault.
+    /// @notice Emitted when the flow caps are set for a vault.
     event SetFlowCaps(address indexed sender, address indexed vault, FlowCapsConfig[] config);
 }

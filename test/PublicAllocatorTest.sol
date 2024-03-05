@@ -73,20 +73,40 @@ contract PublicAllocatorTest is IntegrationTest {
         _sortSupplyQueueIdleLast();
     }
 
-    function testOwner() public {
-        assertEq(publicAllocator.owner(address(vault)), address(0));
+    function testAdmin() public {
+        assertEq(publicAllocator.admin(address(vault)), address(0));
     }
 
-    function testSetOwner() public {
+    function testSetAdmin() public {
         vm.prank(OWNER);
-        publicAllocator.setOwner(address(vault), address(1));
-        assertEq(publicAllocator.owner(address(vault)), address(1));
+        publicAllocator.setAdmin(address(vault), address(1));
+        assertEq(publicAllocator.admin(address(vault)), address(1));
     }
 
-    function testSetOwnerFail() public {
+    function testSetAdminByAdmin(address sender, address newAdmin) public {
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        vm.assume(sender != newAdmin);
+        vm.prank(OWNER);
+        publicAllocator.setAdmin(address(vault), sender);
+        vm.prank(sender);
+        publicAllocator.setAdmin(address(vault), newAdmin);
+        assertEq(publicAllocator.admin(address(vault)), newAdmin);
+    }
+
+    function testSetAdminAlreadySet() public {
         vm.expectRevert(ErrorsLib.AlreadySet.selector);
         vm.prank(OWNER);
-        publicAllocator.setOwner(address(vault), address(0));
+        publicAllocator.setAdmin(address(vault), address(0));
+    }
+
+    function testSetAdminAccessFail(address sender, address newAdmin) public {
+        vm.assume(sender != OWNER);
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        vm.assume(publicAllocator.admin(address(vault)) != newAdmin);
+
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
+        vm.prank(sender);
+        publicAllocator.setAdmin(address(vault), newAdmin);
     }
 
     function testReallocateCapZeroOutflowByDefault(uint128 flow) public {
@@ -112,28 +132,28 @@ contract PublicAllocatorTest is IntegrationTest {
 
     function testConfigureFlowAccessFail(address sender) public {
         vm.assume(sender != OWNER);
-        vm.assume(sender != address(0));
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
 
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 0)));
 
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotOwner.selector);
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
     }
 
     function testTransferFeeAccessFail(address sender, address payable recipient) public {
         vm.assume(sender != OWNER);
-        vm.assume(sender != address(0));
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotOwner.selector);
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
         publicAllocator.transferFee(address(vault), recipient);
     }
 
     function testSetFeeAccessFail(address sender, uint256 fee) public {
         vm.assume(sender != OWNER);
-        vm.assume(sender != address(0));
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
         vm.prank(sender);
-        vm.expectRevert(ErrorsLib.NotOwner.selector);
+        vm.expectRevert(ErrorsLib.NotAdminNorVaultOwner.selector);
         publicAllocator.setFee(address(vault), fee);
     }
 
@@ -142,6 +162,18 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.prank(OWNER);
         vm.expectEmit(address(publicAllocator));
         emit EventsLib.SetFee(OWNER, address(vault), fee);
+        publicAllocator.setFee(address(vault), fee);
+        assertEq(publicAllocator.fee(address(vault)), fee);
+    }
+
+    function testSetFeeByAdmin(uint256 fee, address sender) public {
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        vm.assume(fee != publicAllocator.fee(address(vault)));
+        vm.prank(OWNER);
+        publicAllocator.setAdmin(address(vault), sender);
+        vm.prank(sender);
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFee(sender, address(vault), fee);
         publicAllocator.setFee(address(vault), fee);
         assertEq(publicAllocator.fee(address(vault)), fee);
     }
@@ -168,6 +200,35 @@ contract PublicAllocatorTest is IntegrationTest {
         emit EventsLib.SetFlowCaps(OWNER, address(vault), flowCaps);
 
         vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+
+        FlowCaps memory flowCap;
+        flowCap = publicAllocator.flowCaps(address(vault), idleParams.id());
+        assertEq(flowCap.maxIn, in0);
+        assertEq(flowCap.maxOut, out0);
+
+        flowCap = publicAllocator.flowCaps(address(vault), allMarkets[0].id());
+        assertEq(flowCap.maxIn, in1);
+        assertEq(flowCap.maxOut, out1);
+    }
+
+    function testSetFlowCapsByAdmin(uint128 in0, uint128 out0, uint128 in1, uint128 out1, address sender) public {
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        in0 = uint128(bound(in0, 0, MAX_SETTABLE_FLOW_CAP));
+        out0 = uint128(bound(out0, 0, MAX_SETTABLE_FLOW_CAP));
+        in1 = uint128(bound(in1, 0, MAX_SETTABLE_FLOW_CAP));
+        out1 = uint128(bound(out1, 0, MAX_SETTABLE_FLOW_CAP));
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(in0, out0)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(in1, out1)));
+
+        vm.prank(OWNER);
+        publicAllocator.setAdmin(address(vault), sender);
+
+        vm.expectEmit(address(publicAllocator));
+        emit EventsLib.SetFlowCaps(sender, address(vault), flowCaps);
+
+        vm.prank(sender);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
 
         FlowCaps memory flowCap;
@@ -293,6 +354,30 @@ contract PublicAllocatorTest is IntegrationTest {
         uint256 before = address(this).balance;
 
         vm.prank(OWNER);
+        publicAllocator.transferFee(address(vault), payable(address(this)));
+
+        assertEq(address(this).balance - before, 2 * 0.001 ether, "wrong fee transferred");
+    }
+
+    function testTransferFeeByAdminSuccess(address sender) public {
+        vm.assume(publicAllocator.admin(address(vault)) != sender);
+        vm.prank(OWNER);
+        publicAllocator.setAdmin(address(vault), sender);
+        vm.prank(sender);
+        publicAllocator.setFee(address(vault), 0.001 ether);
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 2 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(2 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
+
+        publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
+        publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
+
+        uint256 before = address(this).balance;
+
+        vm.prank(sender);
         publicAllocator.transferFee(address(vault), payable(address(this)));
 
         assertEq(address(this).balance - before, 2 * 0.001 ether, "wrong fee transferred");
