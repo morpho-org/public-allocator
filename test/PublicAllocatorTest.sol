@@ -161,7 +161,7 @@ contract PublicAllocatorTest is IntegrationTest {
         vm.assume(fee != publicAllocator.fee(address(vault)));
         vm.prank(OWNER);
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFee(address(vault), fee);
+        emit EventsLib.SetFee(OWNER, address(vault), fee);
         publicAllocator.setFee(address(vault), fee);
         assertEq(publicAllocator.fee(address(vault)), fee);
     }
@@ -197,7 +197,7 @@ contract PublicAllocatorTest is IntegrationTest {
         flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(in1, out1)));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFlowCaps(address(vault), flowCaps);
+        emit EventsLib.SetFlowCaps(OWNER, address(vault), flowCaps);
 
         vm.prank(OWNER);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
@@ -263,9 +263,9 @@ contract PublicAllocatorTest is IntegrationTest {
         withdrawals.push(Withdrawal(allMarkets[1], flow));
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.PublicWithdrawal(address(vault), idleParams.id(), flow);
-        emit EventsLib.PublicWithdrawal(address(vault), allMarkets[1].id(), flow);
-        emit EventsLib.PublicReallocateTo(address(vault), sender, allMarkets[0].id(), 2 * flow);
+        emit EventsLib.PublicWithdrawal(sender, address(vault), idleParams.id(), flow);
+        emit EventsLib.PublicWithdrawal(sender, address(vault), allMarkets[1].id(), flow);
+        emit EventsLib.PublicReallocateTo(sender, address(vault), allMarkets[0].id(), 2 * flow);
 
         vm.prank(sender);
         publicAllocator.reallocateTo(address(vault), withdrawals.sort(), allMarkets[0]);
@@ -317,6 +317,12 @@ contract PublicAllocatorTest is IntegrationTest {
 
         vm.deal(address(this), requiredFee);
 
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 1 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(1 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
+
         publicAllocator.reallocateTo{value: requiredFee}(address(vault), withdrawals, allMarkets[0]);
     }
 
@@ -329,13 +335,18 @@ contract PublicAllocatorTest is IntegrationTest {
 
         vm.deal(address(this), givenFee);
         vm.expectRevert(ErrorsLib.IncorrectFee.selector);
-
         publicAllocator.reallocateTo{value: givenFee}(address(vault), withdrawals, allMarkets[0]);
     }
 
     function testTransferFeeSuccess() public {
         vm.prank(OWNER);
         publicAllocator.setFee(address(vault), 0.001 ether);
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 2 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(2 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
 
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
@@ -369,6 +380,12 @@ contract PublicAllocatorTest is IntegrationTest {
     function testTransferFeeFail() public {
         vm.prank(OWNER);
         publicAllocator.setFee(address(vault), 0.001 ether);
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 1 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(1 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
 
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
 
@@ -412,7 +429,7 @@ contract PublicAllocatorTest is IntegrationTest {
     }
 
     function testReallocationReallocates(uint128 flow) public {
-        flow = uint128(bound(flow, 0, CAP2));
+        flow = uint128(bound(flow, 1, CAP2));
 
         // Set flow limits
         flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(MAX_SETTABLE_FLOW_CAP, MAX_SETTABLE_FLOW_CAP)));
@@ -458,8 +475,38 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.reallocateTo(address(vault), withdrawals, idleParams);
     }
 
+    function testReallocateMarketNotEnabledWithdrawn(MarketParams memory marketParams) public {
+        vm.assume(!vault.config(marketParams.id()).enabled);
+
+        withdrawals.push(Withdrawal(marketParams, 1e18));
+
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MarketNotEnabled.selector, marketParams.id()));
+        publicAllocator.reallocateTo(address(vault), withdrawals, idleParams);
+    }
+
+    function testReallocateMarketNotEnabledSupply(MarketParams memory marketParams) public {
+        vm.assume(!vault.config(marketParams.id()).enabled);
+
+        withdrawals.push(Withdrawal(idleParams, 1e18));
+
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.MarketNotEnabled.selector, marketParams.id()));
+        publicAllocator.reallocateTo(address(vault), withdrawals, marketParams);
+    }
+
+    function testReallocateWithdrawZero() public {
+        withdrawals.push(Withdrawal(idleParams, 0));
+
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.WithdrawZero.selector, idleParams.id()));
+        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
+    }
+
+    function testReallocateEmptyWithdrawals() public {
+        vm.expectRevert(ErrorsLib.EmptyWithdrawals.selector);
+        publicAllocator.reallocateTo(address(vault), withdrawals, allMarkets[0]);
+    }
+
     function testMaxFlowCapValue() public {
-        assertEq(MAX_SETTABLE_FLOW_CAP, type(uint128).max / 2);
+        assertEq(MAX_SETTABLE_FLOW_CAP, 170141183460469231731687303715884105727);
     }
 
     function testMaxFlowCapLimit(uint128 cap) public {

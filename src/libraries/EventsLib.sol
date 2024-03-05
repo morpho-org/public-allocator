@@ -9,20 +9,22 @@ import {FlowCapsConfig, Id} from "../interfaces/IPublicAllocator.sol";
 /// @notice Library exposing events.
 library EventsLib {
     /// @notice Emitted during a public reallocation for each withdrawn-from market.
-    event PublicWithdrawal(address indexed vault, Id id, uint256 withdrawnAssets);
+    event PublicWithdrawal(address indexed sender, address indexed vault, Id indexed id, uint256 withdrawnAssets);
 
     /// @notice Emitted at the end of a public reallocation.
-    event PublicReallocateTo(address indexed vault, address sender, Id supplyMarketId, uint256 suppliedAssets);
+    event PublicReallocateTo(
+        address indexed sender, address indexed vault, Id indexed supplyMarketId, uint256 suppliedAssets
+    );
 
     /// @notice Emitted when the admin is set for a vault.
-    event SetAdmin(address indexed vault, address admin);
+    event SetAdmin(address indexed sender, address indexed vault, address admin);
 
     /// @notice Emitted when the fee is set for a vault.
-    event SetFee(address indexed vault, uint256 fee);
+    event SetFee(address indexed sender, address indexed vault, uint256 fee);
 
     /// @notice Emitted when the fee is transfered for a vault.
-    event TransferFee(address indexed vault, uint256 amount, address indexed feeRecipient);
+    event TransferFee(address indexed sender, address indexed vault, uint256 amount, address indexed feeRecipient);
 
     /// @notice Emitted when the flow caps are set for a vault.
-    event SetFlowCaps(address indexed vault, FlowCapsConfig[] config);
+    event SetFlowCaps(address indexed sender, address indexed vault, FlowCapsConfig[] config);
 }
