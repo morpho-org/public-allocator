@@ -66,14 +66,14 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     function setOwner(address vault, address newOwner) external onlyOwner(vault) {
         if (owner[vault] == newOwner) revert ErrorsLib.AlreadySet();
         owner[vault] = newOwner;
-        emit EventsLib.SetOwner(vault, newOwner);
+        emit EventsLib.SetOwner(msg.sender, vault, newOwner);
     }
 
     /// @inheritdoc IPublicAllocatorBase
     function setFee(address vault, uint256 newFee) external onlyOwner(vault) {
         if (fee[vault] == newFee) revert ErrorsLib.AlreadySet();
         fee[vault] = newFee;
-        emit EventsLib.SetFee(vault, newFee);
+        emit EventsLib.SetFee(msg.sender, vault, newFee);
     }
 
     /// @inheritdoc IPublicAllocatorBase
@@ -89,7 +89,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             flowCaps[vault][id] = config[i].caps;
         }
 
-        emit EventsLib.SetFlowCaps(vault, config);
+        emit EventsLib.SetFlowCaps(msg.sender, vault, config);
     }
 
     /// @inheritdoc IPublicAllocatorBase
@@ -97,7 +97,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         uint256 claimed = accruedFee[vault];
         accruedFee[vault] = 0;
         feeRecipient.transfer(claimed);
-        emit EventsLib.TransferFee(vault, claimed, feeRecipient);
+        emit EventsLib.TransferFee(msg.sender, vault, claimed, feeRecipient);
     }
 
     /* PUBLIC */
@@ -110,8 +110,12 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         if (msg.value != fee[vault]) revert ErrorsLib.IncorrectFee();
         if (msg.value > 0) accruedFee[vault] += msg.value;
 
-        MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
+        if (withdrawals.length == 0) revert ErrorsLib.EmptyWithdrawals();
+
         Id supplyMarketId = supplyMarketParams.id();
+        if (!IMetaMorpho(vault).config(supplyMarketId).enabled) revert ErrorsLib.MarketNotEnabled(supplyMarketId);
+
+        MarketAllocation[] memory allocations = new MarketAllocation[](withdrawals.length + 1);
         uint128 totalWithdrawn;
 
         Id id;
@@ -119,12 +123,15 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         for (uint256 i = 0; i < withdrawals.length; i++) {
             prevId = id;
             id = withdrawals[i].marketParams.id();
+            if (!IMetaMorpho(vault).config(id).enabled) revert ErrorsLib.MarketNotEnabled(id);
+            uint128 withdrawnAssets = withdrawals[i].amount;
+            if (withdrawnAssets == 0) revert ErrorsLib.WithdrawZero(id);
+
             if (Id.unwrap(id) <= Id.unwrap(prevId)) revert ErrorsLib.InconsistentWithdrawals();
             if (Id.unwrap(id) == Id.unwrap(supplyMarketId)) revert ErrorsLib.DepositMarketInWithdrawals();
 
             MORPHO.accrueInterest(withdrawals[i].marketParams);
             uint256 assets = MORPHO.expectedSupplyAssets(withdrawals[i].marketParams, address(vault));
-            uint128 withdrawnAssets = withdrawals[i].amount;
 
             if (flowCaps[vault][id].maxOut < withdrawnAssets) revert ErrorsLib.MaxOutflowExceeded(id);
             if (assets < withdrawnAssets) revert ErrorsLib.NotEnoughSupply(id);
@@ -136,7 +143,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
             totalWithdrawn += withdrawnAssets;
 
-            emit EventsLib.PublicWithdrawal(vault, id, withdrawnAssets);
+            emit EventsLib.PublicWithdrawal(msg.sender, vault, id, withdrawnAssets);
         }
 
         if (flowCaps[vault][supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);
