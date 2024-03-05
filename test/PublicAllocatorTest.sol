@@ -173,7 +173,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setAdmin(address(vault), sender);
         vm.prank(sender);
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFee(address(vault), fee);
+        emit EventsLib.SetFee(sender, address(vault), fee);
         publicAllocator.setFee(address(vault), fee);
         assertEq(publicAllocator.fee(address(vault)), fee);
     }
@@ -226,7 +226,7 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setAdmin(address(vault), sender);
 
         vm.expectEmit(address(publicAllocator));
-        emit EventsLib.SetFlowCaps(address(vault), flowCaps);
+        emit EventsLib.SetFlowCaps(sender, address(vault), flowCaps);
 
         vm.prank(sender);
         publicAllocator.setFlowCaps(address(vault), flowCaps);
@@ -365,6 +365,12 @@ contract PublicAllocatorTest is IntegrationTest {
         publicAllocator.setAdmin(address(vault), sender);
         vm.prank(sender);
         publicAllocator.setFee(address(vault), 0.001 ether);
+
+        flowCaps.push(FlowCapsConfig(idleParams.id(), FlowCaps(0, 2 ether)));
+        flowCaps.push(FlowCapsConfig(allMarkets[0].id(), FlowCaps(2 ether, 0)));
+        vm.prank(OWNER);
+        publicAllocator.setFlowCaps(address(vault), flowCaps);
+        withdrawals.push(Withdrawal(idleParams, 1 ether));
 
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
         publicAllocator.reallocateTo{value: 0.001 ether}(address(vault), withdrawals, allMarkets[0]);
