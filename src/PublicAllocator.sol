@@ -66,14 +66,14 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     function setOwner(address vault, address newOwner) external onlyOwner(vault) {
         if (owner[vault] == newOwner) revert ErrorsLib.AlreadySet();
         owner[vault] = newOwner;
-        emit EventsLib.SetOwner(vault, newOwner);
+        emit EventsLib.SetOwner(msg.sender, vault, newOwner);
     }
 
     /// @inheritdoc IPublicAllocatorBase
     function setFee(address vault, uint256 newFee) external onlyOwner(vault) {
         if (fee[vault] == newFee) revert ErrorsLib.AlreadySet();
         fee[vault] = newFee;
-        emit EventsLib.SetFee(vault, newFee);
+        emit EventsLib.SetFee(msg.sender, vault, newFee);
     }
 
     /// @inheritdoc IPublicAllocatorBase
@@ -85,7 +85,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
             flowCaps[vault][config[i].id] = config[i].caps;
         }
 
-        emit EventsLib.SetFlowCaps(vault, config);
+        emit EventsLib.SetFlowCaps(msg.sender, vault, config);
     }
 
     /// @inheritdoc IPublicAllocatorBase
@@ -93,7 +93,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
         uint256 claimed = accruedFee[vault];
         accruedFee[vault] = 0;
         feeRecipient.transfer(claimed);
-        emit EventsLib.TransferFee(vault, claimed, feeRecipient);
+        emit EventsLib.TransferFee(msg.sender, vault, claimed, feeRecipient);
     }
 
     /* PUBLIC */
@@ -139,7 +139,7 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
 
             totalWithdrawn += withdrawnAssets;
 
-            emit EventsLib.PublicWithdrawal(vault, id, withdrawnAssets);
+            emit EventsLib.PublicWithdrawal(msg.sender, vault, id, withdrawnAssets);
         }
 
         if (flowCaps[vault][supplyMarketId].maxIn < totalWithdrawn) revert ErrorsLib.MaxInflowExceeded(supplyMarketId);

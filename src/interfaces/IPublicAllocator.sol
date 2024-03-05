@@ -9,9 +9,10 @@ import {
     MarketParams
 } from "../../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 
-/// @dev Equal to type(uint128).max/2, so flow caps can always be stored on 128 bits.
+/// @dev Max settable flow cap, such that caps can always be stored on 128 bits.
 /// @dev The actual max possible flow cap is type(uint128).max-1.
-uint128 constant MAX_SETTABLE_FLOW_CAP = 170141183460469231731687303715884105727;
+/// @dev Equals to 170141183460469231731687303715884105727;
+uint128 constant MAX_SETTABLE_FLOW_CAP = type(uint128).max / 2;
 
 struct FlowCaps {
     /// @notice The maximum allowed inflow in a market.
@@ -21,7 +22,9 @@ struct FlowCaps {
 }
 
 struct FlowCapsConfig {
+    /// @notice Market for which to change flow caps.
     Id id;
+    /// @notice New flow caps for this market.
     FlowCaps caps;
 }
 
@@ -53,7 +56,7 @@ interface IPublicAllocatorBase {
     /// @param withdrawals The markets to withdraw from,and the amounts to withdraw.
     /// @param supplyMarketParams The market receiving total withdrawn to.
     /// @dev Will call MetaMorpho's `reallocate`.
-    /// @dev Checks that the public allocator constraints (flows, caps) are respected.
+    /// @dev Checks that the flow caps are respected.
     /// @dev Will revert when `withdrawals` contains a duplicate or is not sorted.
     /// @dev Will revert if `withdrawals` contains the supply market.
     /// @dev Will revert if a withdrawal amount is larger than available liquidity.
