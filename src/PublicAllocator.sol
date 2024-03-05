@@ -81,10 +81,14 @@ contract PublicAllocator is IPublicAllocatorStaticTyping {
     /// @inheritdoc IPublicAllocatorBase
     function setFlowCaps(address vault, FlowCapsConfig[] calldata config) external onlyAdminOrVaultOwner(vault) {
         for (uint256 i = 0; i < config.length; i++) {
+            Id id = config[i].id;
+            if (!IMetaMorpho(vault).config(id).enabled && (config[i].caps.maxIn > 0 || config[i].caps.maxOut > 0)) {
+                revert ErrorsLib.MarketNotEnabled(id);
+            }
             if (config[i].caps.maxIn > MAX_SETTABLE_FLOW_CAP || config[i].caps.maxOut > MAX_SETTABLE_FLOW_CAP) {
                 revert ErrorsLib.MaxSettableFlowCapExceeded();
             }
-            flowCaps[vault][config[i].id] = config[i].caps;
+            flowCaps[vault][id] = config[i].caps;
         }
 
         emit EventsLib.SetFlowCaps(msg.sender, vault, config);

@@ -26,7 +26,7 @@ library ErrorsLib {
     /// @notice Thrown when the deposit market is in `withdrawals`.
     error DepositMarketInWithdrawals();
 
-    /// @notice Thrown when attempting to reallocate to or from a non enabled market.
+    /// @notice Thrown when attempting to reallocate or set flows to non-zero values for a non-enabled market.
     error MarketNotEnabled(Id id);
 
     /// @notice Thrown when attempting to withdraw zero of a market.
