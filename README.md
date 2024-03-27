@@ -6,7 +6,7 @@
 The Public Allocator is a contract that MetaMorpho curators can enable as [allocator](https://github.com/morpho-org/metamorpho?tab=readme-ov-file#allocator) to let anybody reallocate the vault's funds to fill their liquidity needs.
 
 The Public Allocator's function `reallocateTo` ([source](https://github.com/morpho-org/public-allocator/blob/7271fbd60881ff32a466a588f99344c6bf72629a/src/PublicAllocator.sol#L108), [interface](https://github.com/morpho-org/public-allocator/blob/7271fbd60881ff32a466a588f99344c6bf72629a/src/interfaces/IPublicAllocator.sol#L62)) reallocates some liquidity from multiple markets to one market.
-It takes as input `withdrawals`, a list of `(MarketParams, uint128)` pairs, which will be the markets and amounts that will be reallocated, and `supplyMarketParams`, a `MarketParams`, which is the market in which to supply the reallocated funds.
+It takes as input `withdrawals`, a list of pairs, which will be the markets and amounts that will be reallocated, and `supplyMarketParams`, a `MarketParams`, which is the market in which to supply the reallocated funds.
 Note that the `id` of the markets in `withdrawals` must be sorted, and that `supplyMarketParams` cannot be a market of `withdrawals`.
 
 The Public Allocator provides the possibility to the vault owner or a per vault settable admin to constrain the public reallocation:
