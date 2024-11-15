@@ -16,7 +16,7 @@ The Public Allocator provides the possibility to the vault owner or a per vault 
 - **Fee**: If set, user must pay a fee in ETH to be able to call `reallocateTo`.
   The vault owner or the Public Allocator vault admin can set this fee, as well as taking the accumulated fees out by calling `transferFee`.
 
-## Deployment
+## Deployments
 
 See the [documentation](https://docs.morpho.org/addresses#public-allocator).
 
