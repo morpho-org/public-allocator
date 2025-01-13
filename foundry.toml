@@ -5,8 +5,8 @@ libs = ["lib"]
 via_ir = true
 optimizer = true
 optimizer_runs = 999999
-evm_version = "paris"
 bytecode_hash = "none"
+evm_version = "paris"
 
 [profile.default.rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
