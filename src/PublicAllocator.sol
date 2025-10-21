@@ -10,7 +10,11 @@ import {
     IPublicAllocatorBase
 } from "./interfaces/IPublicAllocator.sol";
 import {
-    Id, IMorpho, IMetaMorpho, MarketAllocation, MarketParams
+    Id,
+    IMorpho,
+    IMetaMorpho,
+    MarketAllocation,
+    MarketParams
 } from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
 import {Market} from "../lib/metamorpho/lib/morpho-blue/src/interfaces/IMorpho.sol";
 
