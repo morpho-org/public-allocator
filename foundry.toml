@@ -8,8 +8,15 @@ optimizer_runs = 999999
 bytecode_hash = "none"
 evm_version = "paris"
 
-[profile.default.rpc_endpoints]
+[rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
+
+[lint]
+exclude_lints = [
+    "unused-import",
+    "unwrapped-modifier-logic",
+    "unaliased-plain-import",
+]
 
 [profile.default.fmt]
 wrap_comments = true
