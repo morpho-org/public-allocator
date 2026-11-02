@@ -82,7 +82,7 @@ interface IPublicAllocatorBase {
 /// @dev Consider using the IPublicAllocator interface instead of this one.
 interface IPublicAllocatorStaticTyping is IPublicAllocatorBase {
     /// @notice Returns (maximum inflow, maximum outflow) through public allocation of a given market for a given vault.
-    function flowCaps(address vault, Id) external view returns (uint128, uint128);
+    function flowCaps(address vault, Id) external view returns (uint128 maxIn, uint128 maxOut);
 }
 
 /// @title IPublicAllocator
