@@ -1,5 +1,9 @@
 # Public Allocator
 
+> [!WARNING]
+> This repository is no longer maintained: the public allocator now lives in MetaMorpho, under [`src/periphery/public-allocator`](https://github.com/morpho-org/metamorpho/tree/main/src/periphery/public-allocator).
+> The source and compiled code is unchanged.
+
 ## Overview
 
 [MetaMorpho](https://github.com/morpho-org/metamorpho) is a protocol for funds allocations and risk management on top of [Morpho Blue](https://github.com/morpho-org/morpho-blue).
