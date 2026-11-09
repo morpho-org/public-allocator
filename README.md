@@ -2,7 +2,7 @@
 
 > [!WARNING]
 > This repository is no longer maintained: the public allocator now lives in MetaMorpho, under [`src/periphery/public-allocator`](https://github.com/morpho-org/metamorpho/tree/main/src/periphery/public-allocator).
-> The source and compiled code is unchanged.
+> The compiled code is unchanged.
 
 ## Overview
 
