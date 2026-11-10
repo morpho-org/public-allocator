@@ -10,7 +10,7 @@ import {
     IMorpho,
     Id,
     stdError
-} from "../lib/metamorpho/test/forge/helpers/IntegrationTest.sol";
+} from "../lib/metamorpho/test/helpers/IntegrationTest.sol";
 import {PublicAllocator, FlowCapsConfig, Withdrawal, FlowCaps} from "../src/PublicAllocator.sol";
 import {ErrorsLib} from "../src/libraries/ErrorsLib.sol";
 import {EventsLib} from "../src/libraries/EventsLib.sol";
